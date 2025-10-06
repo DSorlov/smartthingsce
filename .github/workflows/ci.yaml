@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, dev]
+  pull_request:
+    branches: [main, master, dev]
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: Lint and Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install black isort flake8 mypy
+          pip install homeassistant aiohttp types-aiofiles
+          
+      - name: Run Black (Code formatting)
+        run: |
+          black --check --diff custom_components/
+          
+      - name: Run isort (Import sorting)
+        run: |
+          isort --check-only --diff custom_components/
+          
+      - name: Run flake8 (Linting)
+        run: |
+          flake8 custom_components/ --count --select=E9,F63,F7,F82 --show-source --statistics
+          
+  test:
+    name: Test Integration
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+        
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install homeassistant aiohttp pytest pytest-asyncio pytest-cov
+          
+      - name: Validate Python files
+        run: |
+          python -m py_compile custom_components/smartthingsce/*.py
+          
+      - name: Check imports
+        run: |
+          python -c "from custom_components.smartthingsce import DOMAIN"
+          python -c "from custom_components.smartthingsce.const import DOMAIN, CONF_NAME"
