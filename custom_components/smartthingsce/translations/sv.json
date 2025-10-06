@@ -1,0 +1,236 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "SmartThings Community Edition",
+        "description": "Ange din SmartThings Personal Access Token. Du kan skapa en på {token_url}",
+        "data": {
+          "access_token": "Personal Access Token"
+        }
+      },
+      "location": {
+        "title": "Välj Plats",
+        "description": "Välj den SmartThings-plats du vill ansluta",
+        "data": {
+          "location_id": "Plats"
+        }
+      },
+      "webhook": {
+        "title": "Webhook-konfiguration",
+        "description": "Aktivera webhooks för realtidsuppdateringar av enheter i {location_name}. Detta skapar en säker tunnel för händelsenotiser.",
+        "data": {
+          "webhook_enabled": "Aktivera Webhooks"
+        }
+      }
+    },
+    "error": {
+      "auth_failed": "Autentisering misslyckades. Kontrollera att din Personal Access Token är korrekt och inte har löpt ut. Besök https://account.smartthings.com/tokens för att kontrollera din token.",
+      "cannot_connect": "Kan inte ansluta till SmartThings API. Kontrollera din internetanslutning.",
+      "invalid_token": "Ogiltig access token. Se till att du kopierat hela token utan extra mellanslag.",
+      "no_locations": "Inga platser hittades i ditt SmartThings-konto. Skapa en plats i SmartThings-appen först.",
+      "unknown": "Ett okänt fel uppstod. Kontrollera Home Assistant-loggarna för mer information."
+    },
+    "abort": {
+      "already_configured": "Denna plats är redan konfigurerad."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "SmartThings Alternativ",
+        "description": "Konfigurera webhook-inställningar",
+        "data": {
+          "webhook_enabled": "Aktivera Webhooks"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "temperature": {
+        "name": "Temperatur"
+      },
+      "humidity": {
+        "name": "Luftfuktighet"
+      },
+      "illuminance": {
+        "name": "Belysningsstyrka"
+      },
+      "power": {
+        "name": "Effekt"
+      },
+      "energy": {
+        "name": "Energi"
+      },
+      "battery": {
+        "name": "Batteri"
+      },
+      "voltage": {
+        "name": "Spänning"
+      },
+      "refrigeration_status": {
+        "name": "Kylstatus"
+      },
+      "refrigeration_setpoint": {
+        "name": "Kyltemperatur"
+      },
+      "washer_state": {
+        "name": "Tvättmaskinens Status"
+      },
+      "washer_mode": {
+        "name": "Tvättmaskinens Läge"
+      },
+      "dryer_state": {
+        "name": "Torktumlarens Status"
+      },
+      "dryer_mode": {
+        "name": "Torktumlarens Läge"
+      },
+      "oven_state": {
+        "name": "Ugnens Status"
+      },
+      "oven_mode": {
+        "name": "Ugnens Läge"
+      },
+      "oven_setpoint": {
+        "name": "Ugnens Temperatur"
+      },
+      "dishwasher_state": {
+        "name": "Diskmaskinens Status"
+      },
+      "dishwasher_mode": {
+        "name": "Diskmaskinens Läge"
+      },
+      "robot_cleaner_movement": {
+        "name": "Robotdammsugare Rörelse"
+      },
+      "robot_cleaner_mode": {
+        "name": "Robotdammsugare Läge"
+      },
+      "robot_cleaner_turbo": {
+        "name": "Robotdammsugare Turbo"
+      },
+      "completion_time": {
+        "name": "Sluttid"
+      },
+      "running_time": {
+        "name": "Körtid"
+      },
+      "running_course": {
+        "name": "Valt Program"
+      }
+    },
+    "binary_sensor": {
+      "contact": {
+        "name": "Kontakt"
+      },
+      "motion": {
+        "name": "Rörelse"
+      },
+      "presence": {
+        "name": "Närvaro"
+      },
+      "water": {
+        "name": "Vatten"
+      },
+      "smoke": {
+        "name": "Rök"
+      },
+      "carbon_monoxide": {
+        "name": "Kolmonoxid"
+      },
+      "washer_running": {
+        "name": "Tvättmaskin Körs"
+      },
+      "dryer_running": {
+        "name": "Torktumlare Körs"
+      },
+      "oven_running": {
+        "name": "Ugn Körs"
+      },
+      "dishwasher_running": {
+        "name": "Diskmaskin Körs"
+      },
+      "error": {
+        "name": "Fel"
+      },
+      "kids_lock": {
+        "name": "Barnlås"
+      }
+    },
+    "switch": {
+      "switch": {
+        "name": "Strömbrytare"
+      }
+    },
+    "light": {
+      "light": {
+        "name": "Lampa"
+      }
+    },
+    "lock": {
+      "lock": {
+        "name": "Lås"
+      }
+    },
+    "climate": {
+      "thermostat": {
+        "name": "Termostat"
+      }
+    },
+    "cover": {
+      "door": {
+        "name": "Dörr"
+      },
+      "window_shade": {
+        "name": "Rullgardin"
+      },
+      "garage_door": {
+        "name": "Garageport"
+      }
+    },
+    "fan": {
+      "fan": {
+        "name": "Fläkt"
+      }
+    }
+  },
+  "services": {
+    "send_command": {
+      "name": "Skicka Kommando",
+      "description": "Skicka ett kommando till en SmartThings-enhet",
+      "fields": {
+        "device_id": {
+          "name": "Enhets-ID",
+          "description": "SmartThings enhets-ID"
+        },
+        "capability": {
+          "name": "Kapabilitet",
+          "description": "Kapabiliteten att kontrollera"
+        },
+        "command": {
+          "name": "Kommando",
+          "description": "Kommandot att utföra"
+        },
+        "arguments": {
+          "name": "Argument",
+          "description": "Valfria kommandoargument"
+        }
+      }
+    },
+    "execute_scene": {
+      "name": "Kör Scen",
+      "description": "Kör en SmartThings-scen",
+      "fields": {
+        "scene_id": {
+          "name": "Scen-ID",
+          "description": "SmartThings scen-ID"
+        }
+      }
+    },
+    "refresh_devices": {
+      "name": "Uppdatera Enheter",
+      "description": "Uppdatera enhetsstatus manuellt"
+    }
+  }
+}

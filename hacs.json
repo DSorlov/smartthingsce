@@ -1,0 +1,7 @@
+{
+  "name": "SmartThings Community Edition",
+  "content_in_root": false,
+  "filename": "smartthingsce",
+  "render_readme": true,
+  "homeassistant": "2024.10.0"
+}

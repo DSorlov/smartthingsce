@@ -1,0 +1,50 @@
+# Services for SmartThings Community Edition integration
+
+send_command:
+  name: Send Command
+  description: Send a command to a SmartThings device
+  fields:
+    device_id:
+      name: Device ID
+      description: The SmartThings device ID
+      required: true
+      example: "abc123-def456-ghi789"
+      selector:
+        text:
+    capability:
+      name: Capability
+      description: The capability to control (e.g., switch, switchLevel, thermostatMode)
+      required: true
+      example: "switch"
+      selector:
+        text:
+    command:
+      name: Command
+      description: The command to execute (e.g., on, off, setLevel)
+      required: true
+      example: "on"
+      selector:
+        text:
+    arguments:
+      name: Arguments
+      description: Optional command arguments as a list
+      required: false
+      example: "[100]"
+      selector:
+        object:
+
+execute_scene:
+  name: Execute Scene
+  description: Execute a SmartThings scene
+  fields:
+    scene_id:
+      name: Scene ID
+      description: The SmartThings scene ID
+      required: true
+      example: "abc123-def456-ghi789"
+      selector:
+        text:
+
+refresh_devices:
+  name: Refresh Devices
+  description: Manually refresh all device states from SmartThings

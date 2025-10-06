@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "SmartThings Community Edition",
+        "description": "Enter your SmartThings Personal Access Token. You can create one at https://account.smartthings.com/tokens",
+        "data": {
+          "access_token": "Personal Access Token"
+        }
+      },
+      "location": {
+        "title": "Select Location",
+        "description": "Select the SmartThings location you want to connect",
+        "data": {
+          "location_id": "Location"
+        }
+      },
+      "webhook": {
+        "title": "Webhook Configuration",
+        "description": "Enable webhooks for real-time device updates. This will create a secure tunnel for event notifications.",
+        "data": {
+          "webhook_enabled": "Enable Webhooks"
+        }
+      }
+    },
+    "error": {
+      "auth_failed": "Authentication failed. Please check your token.",
+      "cannot_connect": "Cannot connect to SmartThings API.",
+      "invalid_token": "Invalid access token.",
+      "no_locations": "No locations found. Please create a location in the SmartThings app first.",
+      "unknown": "An unknown error occurred."
+    },
+    "abort": {
+      "already_configured": "This location is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "SmartThings Options",
+        "description": "Configure webhook settings",
+        "data": {
+          "webhook_enabled": "Enable Webhooks"
+        }
+      }
+    }
+  }
+}

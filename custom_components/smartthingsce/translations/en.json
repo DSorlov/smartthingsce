@@ -1,0 +1,236 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "SmartThings Community Edition",
+        "description": "Enter your SmartThings Personal Access Token. You can create one at {token_url}",
+        "data": {
+          "access_token": "Personal Access Token"
+        }
+      },
+      "location": {
+        "title": "Select Location",
+        "description": "Select the SmartThings location you want to connect",
+        "data": {
+          "location_id": "Location"
+        }
+      },
+      "webhook": {
+        "title": "Webhook Configuration",
+        "description": "Enable webhooks for real-time device updates in {location_name}. This will create a secure tunnel for event notifications.",
+        "data": {
+          "webhook_enabled": "Enable Webhooks"
+        }
+      }
+    },
+    "error": {
+      "auth_failed": "Authentication failed. Please verify your Personal Access Token is correct and has not expired. Visit https://account.smartthings.com/tokens to check your token.",
+      "cannot_connect": "Cannot connect to SmartThings API. Please check your internet connection.",
+      "invalid_token": "Invalid access token. Please ensure you copied the entire token without extra spaces.",
+      "no_locations": "No locations found in your SmartThings account. Please create a location in the SmartThings app first.",
+      "unknown": "An unknown error occurred. Please check the Home Assistant logs for more details."
+    },
+    "abort": {
+      "already_configured": "This location is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "SmartThings Options",
+        "description": "Configure webhook settings",
+        "data": {
+          "webhook_enabled": "Enable Webhooks"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "temperature": {
+        "name": "Temperature"
+      },
+      "humidity": {
+        "name": "Humidity"
+      },
+      "illuminance": {
+        "name": "Illuminance"
+      },
+      "power": {
+        "name": "Power"
+      },
+      "energy": {
+        "name": "Energy"
+      },
+      "battery": {
+        "name": "Battery"
+      },
+      "voltage": {
+        "name": "Voltage"
+      },
+      "refrigeration_status": {
+        "name": "Refrigeration Status"
+      },
+      "refrigeration_setpoint": {
+        "name": "Refrigeration Setpoint"
+      },
+      "washer_state": {
+        "name": "Washer State"
+      },
+      "washer_mode": {
+        "name": "Washer Mode"
+      },
+      "dryer_state": {
+        "name": "Dryer State"
+      },
+      "dryer_mode": {
+        "name": "Dryer Mode"
+      },
+      "oven_state": {
+        "name": "Oven State"
+      },
+      "oven_mode": {
+        "name": "Oven Mode"
+      },
+      "oven_setpoint": {
+        "name": "Oven Setpoint"
+      },
+      "dishwasher_state": {
+        "name": "Dishwasher State"
+      },
+      "dishwasher_mode": {
+        "name": "Dishwasher Mode"
+      },
+      "robot_cleaner_movement": {
+        "name": "Robot Cleaner Movement"
+      },
+      "robot_cleaner_mode": {
+        "name": "Robot Cleaner Mode"
+      },
+      "robot_cleaner_turbo": {
+        "name": "Robot Cleaner Turbo"
+      },
+      "completion_time": {
+        "name": "Completion Time"
+      },
+      "running_time": {
+        "name": "Running Time"
+      },
+      "running_course": {
+        "name": "Running Course"
+      }
+    },
+    "binary_sensor": {
+      "contact": {
+        "name": "Contact"
+      },
+      "motion": {
+        "name": "Motion"
+      },
+      "presence": {
+        "name": "Presence"
+      },
+      "water": {
+        "name": "Water"
+      },
+      "smoke": {
+        "name": "Smoke"
+      },
+      "carbon_monoxide": {
+        "name": "Carbon Monoxide"
+      },
+      "washer_running": {
+        "name": "Washer Running"
+      },
+      "dryer_running": {
+        "name": "Dryer Running"
+      },
+      "oven_running": {
+        "name": "Oven Running"
+      },
+      "dishwasher_running": {
+        "name": "Dishwasher Running"
+      },
+      "error": {
+        "name": "Error"
+      },
+      "kids_lock": {
+        "name": "Kids Lock"
+      }
+    },
+    "switch": {
+      "switch": {
+        "name": "Switch"
+      }
+    },
+    "light": {
+      "light": {
+        "name": "Light"
+      }
+    },
+    "lock": {
+      "lock": {
+        "name": "Lock"
+      }
+    },
+    "climate": {
+      "thermostat": {
+        "name": "Thermostat"
+      }
+    },
+    "cover": {
+      "door": {
+        "name": "Door"
+      },
+      "window_shade": {
+        "name": "Window Shade"
+      },
+      "garage_door": {
+        "name": "Garage Door"
+      }
+    },
+    "fan": {
+      "fan": {
+        "name": "Fan"
+      }
+    }
+  },
+  "services": {
+    "send_command": {
+      "name": "Send Command",
+      "description": "Send a command to a SmartThings device",
+      "fields": {
+        "device_id": {
+          "name": "Device ID",
+          "description": "The SmartThings device ID"
+        },
+        "capability": {
+          "name": "Capability",
+          "description": "The capability to control"
+        },
+        "command": {
+          "name": "Command",
+          "description": "The command to execute"
+        },
+        "arguments": {
+          "name": "Arguments",
+          "description": "Optional command arguments"
+        }
+      }
+    },
+    "execute_scene": {
+      "name": "Execute Scene",
+      "description": "Execute a SmartThings scene",
+      "fields": {
+        "scene_id": {
+          "name": "Scene ID",
+          "description": "The SmartThings scene ID"
+        }
+      }
+    },
+    "refresh_devices": {
+      "name": "Refresh Devices",
+      "description": "Manually refresh device states"
+    }
+  }
+}
