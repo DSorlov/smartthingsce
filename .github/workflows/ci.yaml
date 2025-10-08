@@ -66,4 +66,4 @@ jobs:
       - name: Check imports
         run: |
           python -c "from custom_components.smartthingsce import DOMAIN"
-          python -c "from custom_components.smartthingsce.const import DOMAIN, CONF_NAME"
+          python -c "from custom_components.smartthingsce.const import DOMAIN"

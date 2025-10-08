@@ -12,6 +12,7 @@ DEVICE_VERSION = __version__
 # Configuration keys
 CONF_ACCESS_TOKEN = "access_token"
 CONF_LOCATION_ID = "location_id"
+CONF_NAME = "name"
 CONF_WEBHOOK_ENABLED = "webhook_enabled"
 CONF_WEBHOOK_URL = "webhook_url"
 CONF_TUNNEL_SUBDOMAIN = "tunnel_subdomain"
