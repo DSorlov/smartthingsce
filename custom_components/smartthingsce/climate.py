@@ -34,7 +34,7 @@ async def async_setup_entry(
     for device_id, device in coordinator.devices.items():
         # Get capabilities from the main component
         capability_ids = get_device_capabilities(device)
-        
+
         # Create climate entity for thermostatCoolingSetpoint capability
         if "thermostatCoolingSetpoint" in capability_ids:
             entities.append(
@@ -78,7 +78,7 @@ class SmartThingsThermostat(CoordinatorEntity, ClimateEntity):
         device_status = device.get("status", {})
         main_status = device_status.get("main", {})
         ocf = device.get("ocf", {})
-        
+
         device_info = {
             "identifiers": {(DOMAIN, self._device_id)},
             "name": device.get("label", device.get("name", "Unknown")),
@@ -86,7 +86,7 @@ class SmartThingsThermostat(CoordinatorEntity, ClimateEntity):
             "model": device.get("deviceTypeName", "Climate"),
             "sw_version": DEVICE_VERSION,
         }
-        
+
         # Add OCF device information if available
         if ocf:
             if "firmwareVersion" in ocf:
@@ -95,22 +95,25 @@ class SmartThingsThermostat(CoordinatorEntity, ClimateEntity):
                 device_info["hw_version"] = ocf["hwVersion"]
             if "modelNumber" in ocf:
                 device_info["model"] = ocf["modelNumber"]
-        
+
         # For Samsung appliances, prefer Micom firmware version and otnDUID model
         software_version = main_status.get("samsungce.softwareVersion", {})
         if software_version:
             versions = software_version.get("versions", {}).get("value", [])
             for ver in versions:
-                if ver.get("description") == "Micom" and ver.get("swType") == "Firmware":
+                if (
+                    ver.get("description") == "Micom"
+                    and ver.get("swType") == "Firmware"
+                ):
                     device_info["sw_version"] = ver.get("versionNumber")
                     break
-        
+
         software_update = main_status.get("samsungce.softwareUpdate", {})
         if software_update:
             otn_duid = software_update.get("otnDUID", {}).get("value")
             if otn_duid:
                 device_info["model"] = otn_duid
-        
+
         return DeviceInfo(**device_info)
 
     @property
@@ -118,7 +121,7 @@ class SmartThingsThermostat(CoordinatorEntity, ClimateEntity):
         """Return the current temperature."""
         device = self.coordinator.devices.get(self._device_id, {})
         device_status = device.get("status", {})
-        
+
         # Try to find temperature in any component
         for component_id, component_data in device_status.items():
             if "temperatureMeasurement" in component_data:
@@ -129,7 +132,7 @@ class SmartThingsThermostat(CoordinatorEntity, ClimateEntity):
                         return float(temp_value)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
@@ -137,7 +140,7 @@ class SmartThingsThermostat(CoordinatorEntity, ClimateEntity):
         """Return the target temperature."""
         device = self.coordinator.devices.get(self._device_id, {})
         device_status = device.get("status", {})
-        
+
         # Try to find cooling setpoint in any component
         for component_id, component_data in device_status.items():
             if "thermostatCoolingSetpoint" in component_data:
@@ -148,7 +151,7 @@ class SmartThingsThermostat(CoordinatorEntity, ClimateEntity):
                         return float(setpoint_value)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
@@ -156,18 +159,20 @@ class SmartThingsThermostat(CoordinatorEntity, ClimateEntity):
         """Return the minimum temperature."""
         device = self.coordinator.devices.get(self._device_id, {})
         device_status = device.get("status", {})
-        
+
         # Try to find cooling setpoint range in any component
         for component_id, component_data in device_status.items():
             if "thermostatCoolingSetpoint" in component_data:
                 setpoint_data = component_data.get("thermostatCoolingSetpoint", {})
-                range_value = setpoint_data.get("coolingSetpointRange", {}).get("value", {})
+                range_value = setpoint_data.get("coolingSetpointRange", {}).get(
+                    "value", {}
+                )
                 if isinstance(range_value, dict) and "minimum" in range_value:
                     try:
                         return float(range_value["minimum"])
                     except (ValueError, TypeError):
                         pass
-        
+
         return -30.0  # Default minimum for refrigerators
 
     @property
@@ -175,18 +180,20 @@ class SmartThingsThermostat(CoordinatorEntity, ClimateEntity):
         """Return the maximum temperature."""
         device = self.coordinator.devices.get(self._device_id, {})
         device_status = device.get("status", {})
-        
+
         # Try to find cooling setpoint range in any component
         for component_id, component_data in device_status.items():
             if "thermostatCoolingSetpoint" in component_data:
                 setpoint_data = component_data.get("thermostatCoolingSetpoint", {})
-                range_value = setpoint_data.get("coolingSetpointRange", {}).get("value", {})
+                range_value = setpoint_data.get("coolingSetpointRange", {}).get(
+                    "value", {}
+                )
                 if isinstance(range_value, dict) and "maximum" in range_value:
                     try:
                         return float(range_value["maximum"])
                     except (ValueError, TypeError):
                         pass
-        
+
         return 10.0  # Default maximum for refrigerators
 
     @property
@@ -194,18 +201,20 @@ class SmartThingsThermostat(CoordinatorEntity, ClimateEntity):
         """Return the supported step of target temperature."""
         device = self.coordinator.devices.get(self._device_id, {})
         device_status = device.get("status", {})
-        
+
         # Try to find cooling setpoint range in any component
         for component_id, component_data in device_status.items():
             if "thermostatCoolingSetpoint" in component_data:
                 setpoint_data = component_data.get("thermostatCoolingSetpoint", {})
-                range_value = setpoint_data.get("coolingSetpointRange", {}).get("value", {})
+                range_value = setpoint_data.get("coolingSetpointRange", {}).get(
+                    "value", {}
+                )
                 if isinstance(range_value, dict) and "step" in range_value:
                     try:
                         return float(range_value["step"])
                     except (ValueError, TypeError):
                         pass
-        
+
         return 1.0  # Default step
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
@@ -216,7 +225,7 @@ class SmartThingsThermostat(CoordinatorEntity, ClimateEntity):
 
         device = self.coordinator.devices.get(self._device_id, {})
         device_status = device.get("status", {})
-        
+
         # Find which component has thermostatCoolingSetpoint
         target_component = "main"
         for component_id, component_data in device_status.items():
@@ -231,12 +240,14 @@ class SmartThingsThermostat(CoordinatorEntity, ClimateEntity):
                 "thermostatCoolingSetpoint",
                 "setCoolingSetpoint",
                 [int(temperature)],
-                component=target_component
+                component=target_component,
             )
             # Request a coordinator refresh to update the state
             await self.coordinator.async_request_refresh()
         except Exception as err:
-            _LOGGER.error("Failed to set temperature for device %s: %s", self._device_id, err)
+            _LOGGER.error(
+                "Failed to set temperature for device %s: %s", self._device_id, err
+            )
 
     @property
     def available(self) -> bool:

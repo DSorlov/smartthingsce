@@ -1,4 +1,5 @@
 """Media Player platform for SmartThings Community Edition."""
+
 from __future__ import annotations
 
 import logging
@@ -33,10 +34,15 @@ async def async_setup_entry(
     entities = []
     for device_id, device in coordinator.devices.items():
         capability_ids = get_device_capabilities(device)
-        
+
         # Check for media player capabilities
-        if any(cap in capability_ids for cap in ["mediaPlayback", "audioVolume", "tvChannel", "mediaInputSource"]):
-            _LOGGER.info("Creating media player for device %s", device.get("label", device_id))
+        if any(
+            cap in capability_ids
+            for cap in ["mediaPlayback", "audioVolume", "tvChannel", "mediaInputSource"]
+        ):
+            _LOGGER.info(
+                "Creating media player for device %s", device.get("label", device_id)
+            )
             entities.append(SmartThingsMediaPlayer(coordinator, api, device_id))
 
     async_add_entities(entities)
@@ -78,31 +84,33 @@ class SmartThingsMediaPlayer(CoordinatorEntity, MediaPlayerEntity):
         """Flag media player features that are supported."""
         device = self.coordinator.devices.get(self._device_id, {})
         capability_ids = get_device_capabilities(device)
-        
+
         features = MediaPlayerEntityFeature(0)
-        
+
         if "mediaPlayback" in capability_ids:
             features |= (
-                MediaPlayerEntityFeature.PLAY |
-                MediaPlayerEntityFeature.PAUSE |
-                MediaPlayerEntityFeature.STOP |
-                MediaPlayerEntityFeature.PREVIOUS_TRACK |
-                MediaPlayerEntityFeature.NEXT_TRACK
+                MediaPlayerEntityFeature.PLAY
+                | MediaPlayerEntityFeature.PAUSE
+                | MediaPlayerEntityFeature.STOP
+                | MediaPlayerEntityFeature.PREVIOUS_TRACK
+                | MediaPlayerEntityFeature.NEXT_TRACK
             )
-            
+
         if "audioVolume" in capability_ids:
             features |= (
-                MediaPlayerEntityFeature.VOLUME_SET |
-                MediaPlayerEntityFeature.VOLUME_MUTE |
-                MediaPlayerEntityFeature.VOLUME_STEP
+                MediaPlayerEntityFeature.VOLUME_SET
+                | MediaPlayerEntityFeature.VOLUME_MUTE
+                | MediaPlayerEntityFeature.VOLUME_STEP
             )
-            
+
         if "switch" in capability_ids:
-            features |= MediaPlayerEntityFeature.TURN_ON | MediaPlayerEntityFeature.TURN_OFF
-            
+            features |= (
+                MediaPlayerEntityFeature.TURN_ON | MediaPlayerEntityFeature.TURN_OFF
+            )
+
         if "mediaInputSource" in capability_ids:
             features |= MediaPlayerEntityFeature.SELECT_SOURCE
-            
+
         return features
 
     @property
@@ -110,25 +118,29 @@ class SmartThingsMediaPlayer(CoordinatorEntity, MediaPlayerEntity):
         """State of the player."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         # Check switch state first
         for component_id, component_status in status.items():
             if "switch" in component_status:
                 switch_state = component_status["switch"].get("switch", {}).get("value")
                 if switch_state == "off":
                     return MediaPlayerState.OFF
-        
+
         # Check media playback state
         for component_id, component_status in status.items():
             if "mediaPlayback" in component_status:
-                playback_status = component_status["mediaPlayback"].get("playbackStatus", {}).get("value")
+                playback_status = (
+                    component_status["mediaPlayback"]
+                    .get("playbackStatus", {})
+                    .get("value")
+                )
                 if playback_status == "playing":
                     return MediaPlayerState.PLAYING
                 elif playback_status == "paused":
                     return MediaPlayerState.PAUSED
                 elif playback_status == "stopped":
                     return MediaPlayerState.IDLE
-        
+
         return MediaPlayerState.ON
 
     @property
@@ -136,7 +148,7 @@ class SmartThingsMediaPlayer(CoordinatorEntity, MediaPlayerEntity):
         """Volume level of the media player (0..1)."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "audioVolume" in component_status:
                 volume = component_status["audioVolume"].get("volume", {}).get("value")
@@ -152,7 +164,7 @@ class SmartThingsMediaPlayer(CoordinatorEntity, MediaPlayerEntity):
         """Boolean if volume is currently muted."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "audioMute" in component_status:
                 mute_state = component_status["audioMute"].get("mute", {}).get("value")
@@ -169,13 +181,19 @@ class SmartThingsMediaPlayer(CoordinatorEntity, MediaPlayerEntity):
         """Name of the current input source."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "mediaInputSource" in component_status:
-                input_source = component_status["mediaInputSource"].get("inputSource", {}).get("value")
+                input_source = (
+                    component_status["mediaInputSource"]
+                    .get("inputSource", {})
+                    .get("value")
+                )
                 return input_source
             elif "tvChannel" in component_status:
-                channel = component_status["tvChannel"].get("tvChannel", {}).get("value")
+                channel = (
+                    component_status["tvChannel"].get("tvChannel", {}).get("value")
+                )
                 return f"Channel {channel}" if channel else None
         return None
 
@@ -184,10 +202,14 @@ class SmartThingsMediaPlayer(CoordinatorEntity, MediaPlayerEntity):
         """List of available input sources."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "mediaInputSource" in component_status:
-                supported_sources = component_status["mediaInputSource"].get("supportedInputSources", {}).get("value", [])
+                supported_sources = (
+                    component_status["mediaInputSource"]
+                    .get("supportedInputSources", {})
+                    .get("value", [])
+                )
                 return supported_sources
         return None
 
@@ -224,7 +246,9 @@ class SmartThingsMediaPlayer(CoordinatorEntity, MediaPlayerEntity):
             )
             await self.coordinator.async_request_refresh()
         except Exception as err:
-            _LOGGER.error("Failed to turn off media player %s: %s", self._device_id, err)
+            _LOGGER.error(
+                "Failed to turn off media player %s: %s", self._device_id, err
+            )
 
     async def async_media_play(self) -> None:
         """Send play command."""

@@ -1,4 +1,5 @@
 """Pool/Spa Controller platform for SmartThings Community Edition."""
+
 from __future__ import annotations
 
 import logging
@@ -44,48 +45,72 @@ async def async_setup_entry(
     entities = []
     for device_id, device in coordinator.devices.items():
         capability_ids = get_device_capabilities(device)
-        
+
         # Pool/Spa devices - check for pool-specific capabilities
-        is_pool_device = any(cap in capability_ids for cap in [
-            "poolController", "poolHeater", "poolPump", "poolChlorine", "poolPH"
-        ])
-        
+        is_pool_device = any(
+            cap in capability_ids
+            for cap in [
+                "poolController",
+                "poolHeater",
+                "poolPump",
+                "poolChlorine",
+                "poolPH",
+            ]
+        )
+
         # Also check device type/name for pool equipment
         device_type = device.get("deviceTypeName", "").lower()
         device_label = device.get("label", "").lower()
-        if any(keyword in device_type or keyword in device_label 
-               for keyword in ["pool", "spa", "hot tub", "chlorine", "heater"]):
+        if any(
+            keyword in device_type or keyword in device_label
+            for keyword in ["pool", "spa", "hot tub", "chlorine", "heater"]
+        ):
             is_pool_device = True
-            
+
         if is_pool_device:
             device_label = device.get("label", device_id)
-            
+
             # Pool Controller (main status)
             if "poolController" in capability_ids:
-                _LOGGER.info("Creating pool controller status sensor for device %s", device_label)
-                entities.append(SmartThingsPoolControllerStatus(coordinator, api, device_id))
-                
+                _LOGGER.info(
+                    "Creating pool controller status sensor for device %s", device_label
+                )
+                entities.append(
+                    SmartThingsPoolControllerStatus(coordinator, api, device_id)
+                )
+
             # Pool Heater (temperature control)
-            if "poolHeater" in capability_ids or ("temperatureMeasurement" in capability_ids and "thermostatHeatingSetpoint" in capability_ids):
-                _LOGGER.info("Creating pool heater thermostat for device %s", device_label)
-                entities.append(SmartThingsPoolHeaterThermostat(coordinator, api, device_id))
-                
+            if "poolHeater" in capability_ids or (
+                "temperatureMeasurement" in capability_ids
+                and "thermostatHeatingSetpoint" in capability_ids
+            ):
+                _LOGGER.info(
+                    "Creating pool heater thermostat for device %s", device_label
+                )
+                entities.append(
+                    SmartThingsPoolHeaterThermostat(coordinator, api, device_id)
+                )
+
             # Pool Pump control
             if "poolPump" in capability_ids:
                 _LOGGER.info("Creating pool pump control for device %s", device_label)
                 entities.append(SmartThingsPoolPumpControl(coordinator, api, device_id))
                 entities.append(SmartThingsPoolPumpSpeed(coordinator, api, device_id))
-                
+
             # Pool Temperature sensor (separate from heater control)
             if "temperatureMeasurement" in capability_ids:
-                _LOGGER.info("Creating pool temperature sensor for device %s", device_label)
+                _LOGGER.info(
+                    "Creating pool temperature sensor for device %s", device_label
+                )
                 entities.append(SmartThingsPoolTemperature(coordinator, api, device_id))
-                
+
             # Pool Chlorine Level
             if "poolChlorine" in capability_ids:
-                _LOGGER.info("Creating pool chlorine sensor for device %s", device_label)
+                _LOGGER.info(
+                    "Creating pool chlorine sensor for device %s", device_label
+                )
                 entities.append(SmartThingsPoolChlorine(coordinator, api, device_id))
-                
+
             # Pool pH Level
             if "poolPH" in capability_ids:
                 _LOGGER.info("Creating pool pH sensor for device %s", device_label)
@@ -130,12 +155,16 @@ class SmartThingsPoolControllerStatus(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "poolController" in component_status:
-                controller_status = component_status["poolController"].get("poolStatus", {}).get("value")
+                controller_status = (
+                    component_status["poolController"]
+                    .get("poolStatus", {})
+                    .get("value")
+                )
                 return controller_status
-        
+
         return None
 
     @property
@@ -206,10 +235,12 @@ class SmartThingsPoolHeaterThermostat(CoordinatorEntity, ClimateEntity):
         """Return current operation mode."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "poolHeater" in component_status:
-                heater_status = component_status["poolHeater"].get("heaterStatus", {}).get("value")
+                heater_status = (
+                    component_status["poolHeater"].get("heaterStatus", {}).get("value")
+                )
                 if heater_status == "heating":
                     return HVACMode.HEAT
                 elif heater_status == "off":
@@ -220,7 +251,7 @@ class SmartThingsPoolHeaterThermostat(CoordinatorEntity, ClimateEntity):
                     return HVACMode.HEAT
                 else:
                     return HVACMode.OFF
-        
+
         return HVACMode.OFF
 
     @property
@@ -228,16 +259,20 @@ class SmartThingsPoolHeaterThermostat(CoordinatorEntity, ClimateEntity):
         """Return the current temperature."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "temperatureMeasurement" in component_status:
-                temp = component_status["temperatureMeasurement"].get("temperature", {}).get("value")
+                temp = (
+                    component_status["temperatureMeasurement"]
+                    .get("temperature", {})
+                    .get("value")
+                )
                 if temp is not None:
                     try:
                         return float(temp)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
@@ -245,23 +280,31 @@ class SmartThingsPoolHeaterThermostat(CoordinatorEntity, ClimateEntity):
         """Return the target temperature."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "thermostatHeatingSetpoint" in component_status:
-                setpoint = component_status["thermostatHeatingSetpoint"].get("heatingSetpoint", {}).get("value")
+                setpoint = (
+                    component_status["thermostatHeatingSetpoint"]
+                    .get("heatingSetpoint", {})
+                    .get("value")
+                )
                 if setpoint is not None:
                     try:
                         return float(setpoint)
                     except (ValueError, TypeError):
                         pass
             elif "poolHeater" in component_status:
-                setpoint = component_status["poolHeater"].get("targetTemperature", {}).get("value")
+                setpoint = (
+                    component_status["poolHeater"]
+                    .get("targetTemperature", {})
+                    .get("value")
+                )
                 if setpoint is not None:
                     try:
                         return float(setpoint)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
@@ -302,7 +345,9 @@ class SmartThingsPoolHeaterThermostat(CoordinatorEntity, ClimateEntity):
                 )
             await self.coordinator.async_request_refresh()
         except Exception as err:
-            _LOGGER.error("Failed to set HVAC mode for pool heater %s: %s", self._device_id, err)
+            _LOGGER.error(
+                "Failed to set HVAC mode for pool heater %s: %s", self._device_id, err
+            )
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set new target temperature."""
@@ -319,7 +364,9 @@ class SmartThingsPoolHeaterThermostat(CoordinatorEntity, ClimateEntity):
             )
             await self.coordinator.async_request_refresh()
         except Exception as err:
-            _LOGGER.error("Failed to set temperature for pool heater %s: %s", self._device_id, err)
+            _LOGGER.error(
+                "Failed to set temperature for pool heater %s: %s", self._device_id, err
+            )
 
     @property
     def icon(self) -> str:
@@ -362,15 +409,17 @@ class SmartThingsPoolPumpControl(CoordinatorEntity, SwitchEntity):
         """Return true if pump is on."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "poolPump" in component_status:
-                pump_status = component_status["poolPump"].get("pumpStatus", {}).get("value")
+                pump_status = (
+                    component_status["poolPump"].get("pumpStatus", {}).get("value")
+                )
                 return pump_status == "on"
             elif "switch" in component_status:
                 switch_state = component_status["switch"].get("switch", {}).get("value")
                 return switch_state == "on"
-        
+
         return False
 
     @property
@@ -446,7 +495,7 @@ class SmartThingsPoolPumpSpeed(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "poolPump" in component_status:
                 speed = component_status["poolPump"].get("pumpSpeed", {}).get("value")
@@ -455,7 +504,7 @@ class SmartThingsPoolPumpSpeed(CoordinatorEntity, SensorEntity):
                         return float(speed)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
@@ -508,16 +557,20 @@ class SmartThingsPoolTemperature(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "temperatureMeasurement" in component_status:
-                temp = component_status["temperatureMeasurement"].get("temperature", {}).get("value")
+                temp = (
+                    component_status["temperatureMeasurement"]
+                    .get("temperature", {})
+                    .get("value")
+                )
                 if temp is not None:
                     try:
                         return float(temp)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
@@ -569,16 +622,20 @@ class SmartThingsPoolChlorine(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "poolChlorine" in component_status:
-                chlorine = component_status["poolChlorine"].get("chlorineLevel", {}).get("value")
+                chlorine = (
+                    component_status["poolChlorine"]
+                    .get("chlorineLevel", {})
+                    .get("value")
+                )
                 if chlorine is not None:
                     try:
                         return float(chlorine)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
@@ -637,7 +694,7 @@ class SmartThingsPoolPH(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "poolPH" in component_status:
                 ph = component_status["poolPH"].get("phLevel", {}).get("value")
@@ -646,7 +703,7 @@ class SmartThingsPoolPH(CoordinatorEntity, SensorEntity):
                         return float(ph)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property

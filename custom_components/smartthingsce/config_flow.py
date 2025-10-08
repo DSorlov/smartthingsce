@@ -51,7 +51,7 @@ class SmartThingsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 session = async_get_clientsession(self.hass)
                 api = SmartThingsAPI(self._access_token, session)
-                
+
                 _LOGGER.debug("Attempting to validate token and fetch locations")
                 self._locations = await api.get_locations()
                 _LOGGER.debug("Successfully fetched %d locations", len(self._locations))
@@ -65,7 +65,9 @@ class SmartThingsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 _LOGGER.error("SmartThings API error: %s", err)
                 errors["base"] = ERROR_AUTH_FAILED
             except Exception as err:
-                _LOGGER.exception("Unexpected exception during token validation: %s", err)
+                _LOGGER.exception(
+                    "Unexpected exception during token validation: %s", err
+                )
                 errors["base"] = ERROR_UNKNOWN
 
         data_schema = vol.Schema(
@@ -92,9 +94,7 @@ class SmartThingsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return await self.async_step_webhook()
 
         # Create location selection schema
-        location_options = {
-            loc["locationId"]: loc["name"] for loc in self._locations
-        }
+        location_options = {loc["locationId"]: loc["name"] for loc in self._locations}
 
         data_schema = vol.Schema(
             {
@@ -113,7 +113,7 @@ class SmartThingsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle webhook configuration."""
         if user_input is not None:
             webhook_enabled = user_input.get(CONF_WEBHOOK_ENABLED, False)
-            
+
             # Generate unique tunnel subdomain
             unique_id = str(uuid.uuid4())[:8]
             integration_id = str(uuid.uuid4())[:8]
@@ -121,8 +121,12 @@ class SmartThingsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             # Create the config entry
             title = next(
-                (loc["name"] for loc in self._locations if loc["locationId"] == self._location_id),
-                "SmartThings"
+                (
+                    loc["name"]
+                    for loc in self._locations
+                    if loc["locationId"] == self._location_id
+                ),
+                "SmartThings",
             )
 
             await self.async_set_unique_id(f"{DOMAIN}_{self._location_id}")
@@ -149,8 +153,12 @@ class SmartThingsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=data_schema,
             description_placeholders={
                 "location_name": next(
-                    (loc["name"] for loc in self._locations if loc["locationId"] == self._location_id),
-                    "Unknown"
+                    (
+                        loc["name"]
+                        for loc in self._locations
+                        if loc["locationId"] == self._location_id
+                    ),
+                    "Unknown",
                 )
             },
         )

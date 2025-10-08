@@ -14,13 +14,8 @@ from .const import CONF_TUNNEL_SUBDOMAIN, CONF_WEBHOOK_ENABLED, WEBHOOK_PATH
 
 _LOGGER = logging.getLogger(__name__)
 
-# Try to import localtunnel
-try:
-    from localtunnel import LocalTunnelClient
-    LOCALTUNNEL_AVAILABLE = True
-except ImportError:
-    _LOGGER.debug("localtunnel-py not available, falling back to polling mode")
-    LOCALTUNNEL_AVAILABLE = False
+# Import pyngrok for tunneling (required dependency)
+from pyngrok import ngrok
 
 
 class SmartThingsWebhookView(HomeAssistantView):
@@ -48,38 +43,42 @@ class SmartThingsWebhookView(HomeAssistantView):
 
             # Handle lifecycle events
             lifecycle = data.get("lifecycle")
-            
+
             if lifecycle == "PING":
                 # Respond to ping with challenge
                 challenge = data.get("pingData", {}).get("challenge")
                 return web.json_response({"pingData": {"challenge": challenge}})
-            
+
             elif lifecycle == "CONFIRMATION":
                 # Handle app confirmation
-                confirmation_url = data.get("confirmationData", {}).get("confirmationUrl")
+                confirmation_url = data.get("confirmationData", {}).get(
+                    "confirmationUrl"
+                )
                 if confirmation_url:
                     _LOGGER.info("Webhook confirmation URL: %s", confirmation_url)
                 return web.Response(status=200)
-            
+
             elif lifecycle == "EVENT":
                 # Handle device events
                 await self.webhook_manager.handle_event(data)
                 return web.Response(status=200)
-            
+
             elif lifecycle == "CONFIGURATION":
                 # Handle configuration phase
-                return web.json_response({
-                    "configurationData": {
-                        "initialize": {
-                            "name": "SmartThings Community Edition",
-                            "description": "Home Assistant Integration",
-                            "id": self.webhook_manager.app_id,
-                            "permissions": [],
-                            "firstPageId": "1"
+                return web.json_response(
+                    {
+                        "configurationData": {
+                            "initialize": {
+                                "name": "SmartThings Community Edition",
+                                "description": "Home Assistant Integration",
+                                "id": self.webhook_manager.app_id,
+                                "permissions": [],
+                                "firstPageId": "1",
+                            }
                         }
                     }
-                })
-            
+                )
+
             else:
                 _LOGGER.warning("Unknown lifecycle: %s", lifecycle)
                 return web.Response(status=200)
@@ -120,7 +119,7 @@ class WebhookManager:
             # Start localtunnel if webhook is enabled
             if self.entry.data.get(CONF_WEBHOOK_ENABLED, False):
                 await self._start_tunnel()
-                
+
                 # Create subscriptions for all devices
                 await self._create_subscriptions()
 
@@ -135,13 +134,14 @@ class WebhookManager:
             # Delete subscriptions
             await self._delete_subscriptions()
 
-            # Stop tunnel
-            if self.tunnel:
+            # Stop ngrok tunnel
+            if hasattr(self, "ngrok_tunnel") and self.ngrok_tunnel:
                 try:
-                    await self.hass.async_add_executor_job(self.tunnel.close)
+                    ngrok.disconnect(self.ngrok_tunnel.public_url)
+                    _LOGGER.info("Ngrok tunnel disconnected")
                 except Exception as err:
-                    _LOGGER.warning("Error closing tunnel: %s", err)
-                self.tunnel = None
+                    _LOGGER.warning("Error closing ngrok tunnel: %s", err)
+                self.ngrok_tunnel = None
 
             _LOGGER.info("Webhook manager cleaned up")
 
@@ -149,47 +149,44 @@ class WebhookManager:
             _LOGGER.error("Failed to cleanup webhook: %s", err)
 
     async def _start_tunnel(self) -> None:
-        """Start localtunnel using Python API."""
-        if not LOCALTUNNEL_AVAILABLE:
-            _LOGGER.info("Real-time webhooks not available, using polling mode (30-second updates)")
-            return
-
+        """Start ngrok tunnel for webhooks."""
         try:
             subdomain = self.entry.data.get(CONF_TUNNEL_SUBDOMAIN)
             port = 8123  # Home Assistant default port
-            
+
             # Check if hass has a configured port
-            if hasattr(self.hass, 'config') and hasattr(self.hass.config, 'api'):
-                if hasattr(self.hass.config.api, 'port') and self.hass.config.api.port:
+            if hasattr(self.hass, "config") and hasattr(self.hass.config, "api"):
+                if hasattr(self.hass.config.api, "port") and self.hass.config.api.port:
                     port = self.hass.config.api.port
 
-            _LOGGER.info("Starting localtunnel on port %s with subdomain %s", port, subdomain)
+            _LOGGER.info("Starting ngrok tunnel on port %s", port)
 
-            # Create tunnel client
-            self.tunnel = LocalTunnelClient(port=port, subdomain=subdomain)
-            
-            # Open the tunnel (async)
-            await self.tunnel.open()
-            
-            # Get the tunnel URL
-            self.tunnel_url = self.tunnel.get_tunnel_url()
+            # Create ngrok tunnel
+            if subdomain:
+                # Use subdomain if provided (requires ngrok account)
+                self.ngrok_tunnel = ngrok.connect(port, subdomain=subdomain)
+                _LOGGER.info("Created ngrok tunnel with subdomain: %s", subdomain)
+            else:
+                # Create tunnel with random URL
+                self.ngrok_tunnel = ngrok.connect(port)
+                _LOGGER.info("Created ngrok tunnel with random URL")
+
+            # Get tunnel URL
+            self.tunnel_url = self.ngrok_tunnel.public_url
+
+            # Ensure HTTPS
+            if self.tunnel_url.startswith("http://"):
+                self.tunnel_url = self.tunnel_url.replace("http://", "https://")
+
             webhook_url = f"{self.tunnel_url}{WEBHOOK_PATH}/{self.hook_id}"
-            _LOGGER.info("Localtunnel started successfully: %s", webhook_url)
-                
+            _LOGGER.info("Ngrok tunnel started successfully: %s", webhook_url)
+
         except Exception as err:
-            _LOGGER.error("Failed to start localtunnel: %s", err)
-            _LOGGER.warning(
-                "The integration will work using polling (30-second updates). "
-                "For real-time updates, ensure localtunnel-py is installed correctly."
+            _LOGGER.error("Failed to start ngrok tunnel: %s", err)
+            _LOGGER.error(
+                "Real-time webhooks are not available. Ngrok tunnel failed to start."
             )
-            await asyncio.sleep(3)
-
-            self.tunnel_url = f"https://{subdomain}.loca.lt{WEBHOOK_PATH}/{self.hook_id}"
-            _LOGGER.info("Localtunnel started: %s", self.tunnel_url)
-
-        except Exception as err:
-            _LOGGER.error("Failed to start localtunnel: %s", err)
-            _LOGGER.info("Install localtunnel-py: pip install localtunnel-py")
+            raise  # Re-raise the exception since ngrok is required
 
     async def _create_subscriptions(self) -> None:
         """Create subscriptions for all devices."""
@@ -198,7 +195,7 @@ class WebhookManager:
             # In production, you'd need to register as a SmartApp
             # and use the SmartApp subscription API
             _LOGGER.info("Subscription creation would happen here")
-            
+
         except Exception as err:
             _LOGGER.error("Failed to create subscriptions: %s", err)
 
@@ -208,9 +205,9 @@ class WebhookManager:
             for subscription_id in self.subscriptions:
                 # Delete subscription
                 _LOGGER.debug("Deleting subscription: %s", subscription_id)
-            
+
             self.subscriptions.clear()
-            
+
         except Exception as err:
             _LOGGER.error("Failed to delete subscriptions: %s", err)
 
@@ -245,7 +242,7 @@ class WebhookManager:
                         device["status"][component_id] = {}
                     if capability not in device["status"][component_id]:
                         device["status"][component_id][capability] = {}
-                    
+
                     device["status"][component_id][capability][attribute] = {
                         "value": value
                     }

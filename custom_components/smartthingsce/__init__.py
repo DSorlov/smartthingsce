@@ -63,12 +63,12 @@ class SmartThingsCoordinator(DataUpdateCoordinator):
         """Fetch data from SmartThings API."""
         try:
             _LOGGER.debug("Starting data fetch from SmartThings API")
-            
+
             # Fetch devices
             devices = await self.api.get_devices(self.location_id)
             _LOGGER.debug("Fetched %d devices from API", len(devices))
             self.devices = {device["deviceId"]: device for device in devices}
-            
+
             # Debug: Log device information
             for device in devices:
                 _LOGGER.debug("Raw device structure: %s", device)
@@ -76,12 +76,17 @@ class SmartThingsCoordinator(DataUpdateCoordinator):
                 device_id = device.get("deviceId", "Unknown")
                 # Components is a list, find the 'main' component
                 components = device.get("components", [])
-                main_component = next((c for c in components if c.get("id") == "main"), None)
+                main_component = next(
+                    (c for c in components if c.get("id") == "main"), None
+                )
                 if main_component:
                     capabilities = main_component.get("capabilities", [])
                 else:
                     capabilities = []
-                cap_ids = [cap.get("id") if isinstance(cap, dict) else cap for cap in capabilities]
+                cap_ids = [
+                    cap.get("id") if isinstance(cap, dict) else cap
+                    for cap in capabilities
+                ]
                 _LOGGER.info(
                     "Device discovered: %s (ID: %s) with capabilities: %s",
                     device_name,
@@ -157,7 +162,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Ensure domain is initialized in hass.data
     hass.data.setdefault(DOMAIN, {})
-    
+
     # Store coordinator and API
     hass.data[DOMAIN][entry.entry_id] = {
         "coordinator": coordinator,

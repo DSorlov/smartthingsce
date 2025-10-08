@@ -1,4 +1,5 @@
 """Pet Care platform for SmartThings Community Edition."""
+
 from __future__ import annotations
 
 import logging
@@ -34,29 +35,45 @@ async def async_setup_entry(
     entities = []
     for device_id, device in coordinator.devices.items():
         capability_ids = get_device_capabilities(device)
-        
+
         # Pet Feeder devices
         if "petFeederOperatingState" in capability_ids:
             device_label = device.get("label", device_id)
-            
+
             # Operating state sensor
-            _LOGGER.info("Creating pet feeder operating state sensor for device %s", device_label)
-            entities.append(SmartThingsPetFeederOperatingState(coordinator, api, device_id))
-            
+            _LOGGER.info(
+                "Creating pet feeder operating state sensor for device %s", device_label
+            )
+            entities.append(
+                SmartThingsPetFeederOperatingState(coordinator, api, device_id)
+            )
+
             # Food level sensor if available
             if "petFeederFoodLevel" in capability_ids:
-                _LOGGER.info("Creating pet feeder food level sensor for device %s", device_label)
-                entities.append(SmartThingsPetFeederFoodLevel(coordinator, api, device_id))
-                
+                _LOGGER.info(
+                    "Creating pet feeder food level sensor for device %s", device_label
+                )
+                entities.append(
+                    SmartThingsPetFeederFoodLevel(coordinator, api, device_id)
+                )
+
             # Feeding schedule sensor if available
             if "petFeederSchedule" in capability_ids:
-                _LOGGER.info("Creating pet feeder schedule sensor for device %s", device_label)
-                entities.append(SmartThingsPetFeederSchedule(coordinator, api, device_id))
-                
+                _LOGGER.info(
+                    "Creating pet feeder schedule sensor for device %s", device_label
+                )
+                entities.append(
+                    SmartThingsPetFeederSchedule(coordinator, api, device_id)
+                )
+
             # Feed control switch if available
             if "petFeederFeed" in capability_ids:
-                _LOGGER.info("Creating pet feeder feed control for device %s", device_label)
-                entities.append(SmartThingsPetFeederFeedControl(coordinator, api, device_id))
+                _LOGGER.info(
+                    "Creating pet feeder feed control for device %s", device_label
+                )
+                entities.append(
+                    SmartThingsPetFeederFeedControl(coordinator, api, device_id)
+                )
 
     async_add_entities(entities)
 
@@ -97,12 +114,16 @@ class SmartThingsPetFeederOperatingState(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "petFeederOperatingState" in component_status:
-                state = component_status["petFeederOperatingState"].get("operatingState", {}).get("value")
+                state = (
+                    component_status["petFeederOperatingState"]
+                    .get("operatingState", {})
+                    .get("value")
+                )
                 return state
-        
+
         return None
 
     @property
@@ -168,16 +189,20 @@ class SmartThingsPetFeederFoodLevel(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "petFeederFoodLevel" in component_status:
-                level = component_status["petFeederFoodLevel"].get("foodLevel", {}).get("value")
+                level = (
+                    component_status["petFeederFoodLevel"]
+                    .get("foodLevel", {})
+                    .get("value")
+                )
                 if level is not None:
                     try:
                         return float(level)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
@@ -235,10 +260,14 @@ class SmartThingsPetFeederSchedule(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "petFeederSchedule" in component_status:
-                schedule = component_status["petFeederSchedule"].get("schedule", {}).get("value")
+                schedule = (
+                    component_status["petFeederSchedule"]
+                    .get("schedule", {})
+                    .get("value")
+                )
                 if isinstance(schedule, dict):
                     # Format schedule info
                     next_feeding = schedule.get("nextFeeding")
@@ -246,7 +275,7 @@ class SmartThingsPetFeederSchedule(CoordinatorEntity, SensorEntity):
                         return f"Next: {next_feeding}"
                 elif isinstance(schedule, str):
                     return schedule
-        
+
         return None
 
     @property
@@ -255,19 +284,19 @@ class SmartThingsPetFeederSchedule(CoordinatorEntity, SensorEntity):
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
         attributes = {}
-        
+
         for component_id, component_status in status.items():
             if "petFeederSchedule" in component_status:
                 schedule_data = component_status["petFeederSchedule"]
-                
+
                 if "schedule" in schedule_data:
                     schedule = schedule_data["schedule"].get("value", {})
                     if isinstance(schedule, dict):
                         for key, value in schedule.items():
                             attributes[f"schedule_{key}"] = value
-                
+
                 break
-        
+
         return attributes
 
     @property
@@ -317,12 +346,16 @@ class SmartThingsPetFeederFeedControl(CoordinatorEntity, SwitchEntity):
         """Return true if currently feeding."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "petFeederOperatingState" in component_status:
-                state = component_status["petFeederOperatingState"].get("operatingState", {}).get("value")
+                state = (
+                    component_status["petFeederOperatingState"]
+                    .get("operatingState", {})
+                    .get("value")
+                )
                 return state in ["feeding", "dispensing"]
-        
+
         return False
 
     @property

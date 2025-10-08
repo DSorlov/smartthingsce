@@ -1,4 +1,5 @@
 """Plant Monitor platform for SmartThings Community Edition."""
+
 from __future__ import annotations
 
 import logging
@@ -37,48 +38,61 @@ async def async_setup_entry(
     entities = []
     for device_id, device in coordinator.devices.items():
         capability_ids = get_device_capabilities(device)
-        
+
         # Plant Monitor devices - check for soil moisture or plant-specific capabilities
-        is_plant_monitor = any(cap in capability_ids for cap in [
-            "soilMoisture", "plantMoisture", "plantHealth", "plantNutrient"
-        ])
-        
+        is_plant_monitor = any(
+            cap in capability_ids
+            for cap in ["soilMoisture", "plantMoisture", "plantHealth", "plantNutrient"]
+        )
+
         # Also check device type/name for plant monitors
         device_type = device.get("deviceTypeName", "").lower()
         device_label = device.get("label", "").lower()
-        if any(keyword in device_type or keyword in device_label 
-               for keyword in ["plant", "soil", "garden", "moisture"]):
+        if any(
+            keyword in device_type or keyword in device_label
+            for keyword in ["plant", "soil", "garden", "moisture"]
+        ):
             is_plant_monitor = True
-            
+
         if is_plant_monitor:
             device_label = device.get("label", device_id)
-            
+
             # Soil Moisture sensor
             if "soilMoisture" in capability_ids:
-                _LOGGER.info("Creating soil moisture sensor for device %s", device_label)
+                _LOGGER.info(
+                    "Creating soil moisture sensor for device %s", device_label
+                )
                 entities.append(SmartThingsSoilMoisture(coordinator, api, device_id))
-                
+
             # Alternative: plantMoisture capability
             elif "plantMoisture" in capability_ids:
-                _LOGGER.info("Creating plant moisture sensor for device %s", device_label)
+                _LOGGER.info(
+                    "Creating plant moisture sensor for device %s", device_label
+                )
                 entities.append(SmartThingsPlantMoisture(coordinator, api, device_id))
-            
+
             # Plant Health sensor
             if "plantHealth" in capability_ids:
                 _LOGGER.info("Creating plant health sensor for device %s", device_label)
                 entities.append(SmartThingsPlantHealth(coordinator, api, device_id))
-                
-            # Plant Nutrient sensor  
+
+            # Plant Nutrient sensor
             if "plantNutrient" in capability_ids:
-                _LOGGER.info("Creating plant nutrient sensor for device %s", device_label)
+                _LOGGER.info(
+                    "Creating plant nutrient sensor for device %s", device_label
+                )
                 entities.append(SmartThingsPlantNutrient(coordinator, api, device_id))
-            
+
             # Temperature sensor (for plant monitors)
             if "temperatureMeasurement" in capability_ids:
-                _LOGGER.info("Creating plant temperature sensor for device %s", device_label)
-                entities.append(SmartThingsPlantTemperature(coordinator, api, device_id))
-                
-            # Light sensor (for plant monitors)  
+                _LOGGER.info(
+                    "Creating plant temperature sensor for device %s", device_label
+                )
+                entities.append(
+                    SmartThingsPlantTemperature(coordinator, api, device_id)
+                )
+
+            # Light sensor (for plant monitors)
             if "illuminanceMeasurement" in capability_ids:
                 _LOGGER.info("Creating plant light sensor for device %s", device_label)
                 entities.append(SmartThingsPlantLight(coordinator, api, device_id))
@@ -124,16 +138,20 @@ class SmartThingsSoilMoisture(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "soilMoisture" in component_status:
-                moisture = component_status["soilMoisture"].get("soilMoisture", {}).get("value")
+                moisture = (
+                    component_status["soilMoisture"]
+                    .get("soilMoisture", {})
+                    .get("value")
+                )
                 if moisture is not None:
                     try:
                         return float(moisture)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
@@ -194,16 +212,20 @@ class SmartThingsPlantMoisture(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "plantMoisture" in component_status:
-                moisture = component_status["plantMoisture"].get("plantMoisture", {}).get("value")
+                moisture = (
+                    component_status["plantMoisture"]
+                    .get("plantMoisture", {})
+                    .get("value")
+                )
                 if moisture is not None:
                     try:
                         return float(moisture)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
@@ -254,12 +276,14 @@ class SmartThingsPlantHealth(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "plantHealth" in component_status:
-                health = component_status["plantHealth"].get("plantHealth", {}).get("value")
+                health = (
+                    component_status["plantHealth"].get("plantHealth", {}).get("value")
+                )
                 return health
-        
+
         return None
 
     @property
@@ -326,16 +350,20 @@ class SmartThingsPlantNutrient(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "plantNutrient" in component_status:
-                nutrient = component_status["plantNutrient"].get("nutrientLevel", {}).get("value")
+                nutrient = (
+                    component_status["plantNutrient"]
+                    .get("nutrientLevel", {})
+                    .get("value")
+                )
                 if nutrient is not None:
                     try:
                         return float(nutrient)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
@@ -344,19 +372,19 @@ class SmartThingsPlantNutrient(CoordinatorEntity, SensorEntity):
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
         attributes = {}
-        
+
         for component_id, component_status in status.items():
             if "plantNutrient" in component_status:
                 nutrient_data = component_status["plantNutrient"]
-                
+
                 # Add detailed nutrient information
                 for key, value_dict in nutrient_data.items():
                     if isinstance(value_dict, dict) and "value" in value_dict:
                         if key != "nutrientLevel":
                             attributes[f"nutrient_{key}"] = value_dict["value"]
-                
+
                 break
-        
+
         return attributes
 
     @property
@@ -409,16 +437,20 @@ class SmartThingsPlantTemperature(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "temperatureMeasurement" in component_status:
-                temp = component_status["temperatureMeasurement"].get("temperature", {}).get("value")
+                temp = (
+                    component_status["temperatureMeasurement"]
+                    .get("temperature", {})
+                    .get("value")
+                )
                 if temp is not None:
                     try:
                         return float(temp)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
@@ -471,16 +503,20 @@ class SmartThingsPlantLight(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "illuminanceMeasurement" in component_status:
-                illuminance = component_status["illuminanceMeasurement"].get("illuminance", {}).get("value")
+                illuminance = (
+                    component_status["illuminanceMeasurement"]
+                    .get("illuminance", {})
+                    .get("value")
+                )
                 if illuminance is not None:
                     try:
                         return float(illuminance)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property

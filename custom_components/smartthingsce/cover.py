@@ -1,4 +1,5 @@
 """Cover platform for SmartThings Community Edition."""
+
 from __future__ import annotations
 
 import logging
@@ -33,16 +34,25 @@ async def async_setup_entry(
     entities = []
     for device_id, device in coordinator.devices.items():
         capability_ids = get_device_capabilities(device)
-        
+
         # Check for cover capabilities
         if "windowShade" in capability_ids:
-            _LOGGER.info("Creating window shade cover for device %s", device.get("label", device_id))
+            _LOGGER.info(
+                "Creating window shade cover for device %s",
+                device.get("label", device_id),
+            )
             entities.append(SmartThingsWindowShadeCover(coordinator, api, device_id))
         elif "doorControl" in capability_ids:
-            _LOGGER.info("Creating door control cover for device %s", device.get("label", device_id))
+            _LOGGER.info(
+                "Creating door control cover for device %s",
+                device.get("label", device_id),
+            )
             entities.append(SmartThingsDoorControlCover(coordinator, api, device_id))
         elif "garageDoorControl" in capability_ids:
-            _LOGGER.info("Creating garage door cover for device %s", device.get("label", device_id))
+            _LOGGER.info(
+                "Creating garage door cover for device %s",
+                device.get("label", device_id),
+            )
             entities.append(SmartThingsGarageDoorCover(coordinator, api, device_id))
 
     async_add_entities(entities)
@@ -85,12 +95,12 @@ class SmartThingsWindowShadeCover(CoordinatorEntity, CoverEntity):
         """Flag supported features."""
         device = self.coordinator.devices.get(self._device_id, {})
         capability_ids = get_device_capabilities(device)
-        
+
         features = CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE
-        
+
         if "windowShadeLevel" in capability_ids:
             features |= CoverEntityFeature.SET_POSITION
-            
+
         # Check if device supports stop
         status = device.get("status", {})
         for component_id, component_status in status.items():
@@ -98,7 +108,7 @@ class SmartThingsWindowShadeCover(CoordinatorEntity, CoverEntity):
                 # If we have pause capability or stop is mentioned
                 features |= CoverEntityFeature.STOP
                 break
-        
+
         return features
 
     @property
@@ -106,25 +116,31 @@ class SmartThingsWindowShadeCover(CoordinatorEntity, CoverEntity):
         """Return current position of cover."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         # Check for windowShadeLevel first (more precise)
         for component_id, component_status in status.items():
             if "windowShadeLevel" in component_status:
-                level = component_status["windowShadeLevel"].get("shadeLevel", {}).get("value")
+                level = (
+                    component_status["windowShadeLevel"]
+                    .get("shadeLevel", {})
+                    .get("value")
+                )
                 if level is not None:
                     return int(level)
-        
+
         # Fall back to windowShade state
         for component_id, component_status in status.items():
             if "windowShade" in component_status:
-                window_shade = component_status["windowShade"].get("windowShade", {}).get("value")
+                window_shade = (
+                    component_status["windowShade"].get("windowShade", {}).get("value")
+                )
                 if window_shade == "open":
                     return 100
                 elif window_shade == "closed":
                     return 0
                 elif window_shade == "partially open":
                     return 50
-        
+
         return None
 
     @property
@@ -133,15 +149,17 @@ class SmartThingsWindowShadeCover(CoordinatorEntity, CoverEntity):
         position = self.current_cover_position
         if position is not None:
             return position == 0
-        
+
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "windowShade" in component_status:
-                window_shade = component_status["windowShade"].get("windowShade", {}).get("value")
+                window_shade = (
+                    component_status["windowShade"].get("windowShade", {}).get("value")
+                )
                 return window_shade == "closed"
-        
+
         return None
 
     @property
@@ -191,7 +209,7 @@ class SmartThingsWindowShadeCover(CoordinatorEntity, CoverEntity):
         position = kwargs.get(ATTR_POSITION)
         if position is None:
             return
-            
+
         try:
             await self._api.send_device_command(
                 self._device_id,
@@ -251,12 +269,12 @@ class SmartThingsDoorControlCover(CoordinatorEntity, CoverEntity):
         """Return if the cover is closed."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "doorControl" in component_status:
                 door = component_status["doorControl"].get("door", {}).get("value")
                 return door == "closed"
-        
+
         return None
 
     @property
@@ -299,7 +317,7 @@ class SmartThingsGarageDoorCover(CoordinatorEntity, CoverEntity):
     """Representation of a SmartThings garage door."""
 
     _attr_has_entity_name = True
-    _attr_attribution = ATTRIBUTION  
+    _attr_attribution = ATTRIBUTION
     _attr_device_class = CoverDeviceClass.GARAGE
 
     def __init__(self, coordinator, api, device_id: str) -> None:
@@ -337,12 +355,14 @@ class SmartThingsGarageDoorCover(CoordinatorEntity, CoverEntity):
         """Return if the cover is closed."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "garageDoorControl" in component_status:
-                door = component_status["garageDoorControl"].get("door", {}).get("value")
+                door = (
+                    component_status["garageDoorControl"].get("door", {}).get("value")
+                )
                 return door == "closed"
-        
+
         return None
 
     @property

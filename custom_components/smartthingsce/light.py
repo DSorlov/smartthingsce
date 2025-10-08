@@ -41,13 +41,13 @@ async def async_setup_entry(
     for device_id, device in coordinator.devices.items():
         # Get capabilities from the main component
         capability_ids = get_device_capabilities(device)
-        
+
         # Check if device has any light capability
         has_light = any(
             cap_id in ["switchLevel", "colorControl", "colorTemperature"]
             for cap_id in capability_ids
         )
-        
+
         if has_light:
             entities.append(SmartThingsLight(coordinator, api, device_id))
 
@@ -66,11 +66,11 @@ class SmartThingsLight(CoordinatorEntity, LightEntity):
         self._api = api
         self._device_id = device_id
         self._attr_unique_id = f"{DOMAIN}_{device_id}_light"
-        
+
         # Determine supported color modes
         capabilities = self._get_capabilities()
         self._attr_supported_color_modes = set()
-        
+
         if "colorControl" in capabilities:
             self._attr_supported_color_modes.add(ColorMode.HS)
         elif "colorTemperature" in capabilities:
@@ -83,7 +83,9 @@ class SmartThingsLight(CoordinatorEntity, LightEntity):
     def _get_capabilities(self) -> list:
         """Get device capabilities."""
         device = self.coordinator.devices.get(self._device_id, {})
-        capabilities = device.get("components", {}).get("main", {}).get("capabilities", [])
+        capabilities = (
+            device.get("components", {}).get("main", {}).get("capabilities", [])
+        )
         return [cap.get("id") for cap in capabilities]
 
     @property
@@ -118,10 +120,10 @@ class SmartThingsLight(CoordinatorEntity, LightEntity):
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {}).get("main", {}).get("switchLevel", {})
         level = status.get("level", {}).get("value")
-        
+
         if level is not None:
             return int(level * 255 / 100)
-        
+
         return None
 
     @property
@@ -131,10 +133,10 @@ class SmartThingsLight(CoordinatorEntity, LightEntity):
         status = device.get("status", {}).get("main", {}).get("colorControl", {})
         hue = status.get("hue", {}).get("value")
         saturation = status.get("saturation", {}).get("value")
-        
+
         if hue is not None and saturation is not None:
             return (hue * 360 / 100, saturation)
-        
+
         return None
 
     @property
@@ -143,10 +145,10 @@ class SmartThingsLight(CoordinatorEntity, LightEntity):
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {}).get("main", {}).get("colorTemperature", {})
         kelvin = status.get("colorTemperature", {}).get("value")
-        
+
         if kelvin is not None:
             return color_temperature_kelvin_to_mired(kelvin)
-        
+
         return None
 
     @property
@@ -164,7 +166,7 @@ class SmartThingsLight(CoordinatorEntity, LightEntity):
                 "switch",
                 "on",
             )
-            
+
             # Set brightness if provided
             if ATTR_BRIGHTNESS in kwargs:
                 brightness = int(kwargs[ATTR_BRIGHTNESS] * 100 / 255)
@@ -174,7 +176,7 @@ class SmartThingsLight(CoordinatorEntity, LightEntity):
                     "setLevel",
                     [brightness],
                 )
-            
+
             # Set color if provided
             if ATTR_HS_COLOR in kwargs:
                 hue, saturation = kwargs[ATTR_HS_COLOR]
@@ -185,7 +187,7 @@ class SmartThingsLight(CoordinatorEntity, LightEntity):
                     "setColor",
                     [{"hue": hue_100, "saturation": int(saturation)}],
                 )
-            
+
             # Set color temperature if provided
             if ATTR_COLOR_TEMP_KELVIN in kwargs:
                 kelvin = kwargs[ATTR_COLOR_TEMP_KELVIN]
@@ -195,9 +197,9 @@ class SmartThingsLight(CoordinatorEntity, LightEntity):
                     "setColorTemperature",
                     [int(kelvin)],
                 )
-            
+
             await self.coordinator.async_request_refresh()
-            
+
         except Exception as err:
             _LOGGER.error("Failed to turn on light %s: %s", self._device_id, err)
 

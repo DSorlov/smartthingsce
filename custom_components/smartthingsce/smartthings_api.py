@@ -52,12 +52,12 @@ class SmartThingsAPI:
                 if response.status == 401:
                     _LOGGER.error("Authentication failed. Please check your token.")
                     raise SmartThingsAPIError("Invalid or expired access token (401)")
-                
+
                 response.raise_for_status()
-                
+
                 if response.status == 204:
                     return None
-                    
+
                 result = await response.json()
                 _LOGGER.debug("Request successful, status: %s", response.status)
                 return result
@@ -71,7 +71,9 @@ class SmartThingsAPI:
                 raise SmartThingsAPIError("Token does not have required permissions")
             else:
                 _LOGGER.error("API request failed: %s - %s", err.status, err.message)
-                raise SmartThingsAPIError(f"API request failed: {err.status} - {err.message}")
+                raise SmartThingsAPIError(
+                    f"API request failed: {err.status} - {err.message}"
+                )
         except aiohttp.ClientError as err:
             _LOGGER.error("Network error during API request: %s", err)
             raise SmartThingsAPIError(f"Network error: {err}")
@@ -95,7 +97,9 @@ class SmartThingsAPI:
         response = await self._request("GET", url)
         return response.get("items", [])
 
-    async def get_devices(self, location_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    async def get_devices(
+        self, location_id: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         """Get all devices, optionally filtered by location."""
         params = f"?locationId={location_id}" if location_id else ""
         url = f"{API_DEVICES}{params}"
@@ -128,7 +132,7 @@ class SmartThingsAPI:
     ) -> Dict[str, Any]:
         """Send a command to a device."""
         url = f"{API_DEVICES}/{device_id}/commands"
-        
+
         data = {
             "commands": [
                 {
@@ -139,11 +143,19 @@ class SmartThingsAPI:
                 }
             ]
         }
-        
-        _LOGGER.debug("Sending command to device %s: capability=%s, command=%s, args=%s", device_id, capability, command, arguments)
+
+        _LOGGER.debug(
+            "Sending command to device %s: capability=%s, command=%s, args=%s",
+            device_id,
+            capability,
+            command,
+            arguments,
+        )
         return await self._request("POST", url, data)
 
-    async def get_scenes(self, location_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    async def get_scenes(
+        self, location_id: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         """Get scenes, optionally filtered by location."""
         params = f"?locationId={location_id}" if location_id else ""
         url = f"{API_SCENES}{params}"
@@ -167,12 +179,12 @@ class SmartThingsAPI:
     ) -> Dict[str, Any]:
         """Create a subscription."""
         url = f"{API_BASE_URL}/installedapps/{installed_app_id}/subscriptions"
-        
+
         data = {
             "sourceType": source_type,
             "device": {},
         }
-        
+
         if device_id:
             data["device"]["deviceId"] = device_id
             data["device"]["componentId"] = "main"
@@ -180,10 +192,10 @@ class SmartThingsAPI:
             data["device"]["attribute"] = attribute
             if value:
                 data["device"]["value"] = value
-        
+
         if location_id:
             data["device"]["locationId"] = location_id
-        
+
         return await self._request("POST", url, data)
 
     async def delete_subscription(

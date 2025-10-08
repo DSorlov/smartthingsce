@@ -1,4 +1,5 @@
 """Siren platform for SmartThings Community Edition."""
+
 from __future__ import annotations
 
 import logging
@@ -34,16 +35,22 @@ async def async_setup_entry(
     entities = []
     for device_id, device in coordinator.devices.items():
         capability_ids = get_device_capabilities(device)
-        
+
         # Check for siren capabilities
         if "alarm" in capability_ids:
-            _LOGGER.info("Creating alarm siren for device %s", device.get("label", device_id))
+            _LOGGER.info(
+                "Creating alarm siren for device %s", device.get("label", device_id)
+            )
             entities.append(SmartThingsAlarmSiren(coordinator, api, device_id))
         elif "tone" in capability_ids:
-            _LOGGER.info("Creating tone siren for device %s", device.get("label", device_id))
+            _LOGGER.info(
+                "Creating tone siren for device %s", device.get("label", device_id)
+            )
             entities.append(SmartThingsToneSiren(coordinator, api, device_id))
         elif "chime" in capability_ids:
-            _LOGGER.info("Creating chime siren for device %s", device.get("label", device_id))
+            _LOGGER.info(
+                "Creating chime siren for device %s", device.get("label", device_id)
+            )
             entities.append(SmartThingsChimeSiren(coordinator, api, device_id))
 
     async_add_entities(entities)
@@ -90,12 +97,12 @@ class SmartThingsAlarmSiren(CoordinatorEntity, SirenEntity):
         """Return true if siren is on."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "alarm" in component_status:
                 alarm_state = component_status["alarm"].get("alarm", {}).get("value")
                 return alarm_state in ["siren", "strobe", "both"]
-        
+
         return False
 
     @property
@@ -170,18 +177,22 @@ class SmartThingsToneSiren(CoordinatorEntity, SirenEntity):
     def supported_features(self) -> SirenEntityFeature:
         """Return the list of supported features."""
         features = SirenEntityFeature.TURN_ON | SirenEntityFeature.TURN_OFF
-        
+
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         # Check if device supports tones
         for component_id, component_status in status.items():
             if "tone" in component_status:
-                available_tones = component_status.get("tone", {}).get("availableTones", {}).get("value", [])
+                available_tones = (
+                    component_status.get("tone", {})
+                    .get("availableTones", {})
+                    .get("value", [])
+                )
                 if available_tones:
                     features |= SirenEntityFeature.TONES
                 break
-        
+
         return features
 
     @property
@@ -189,12 +200,14 @@ class SmartThingsToneSiren(CoordinatorEntity, SirenEntity):
         """Return a list of available tones."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "tone" in component_status:
-                tones = component_status["tone"].get("availableTones", {}).get("value", [])
+                tones = (
+                    component_status["tone"].get("availableTones", {}).get("value", [])
+                )
                 return tones if tones else None
-        
+
         return None
 
     @property
@@ -202,12 +215,12 @@ class SmartThingsToneSiren(CoordinatorEntity, SirenEntity):
         """Return true if siren is on."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "tone" in component_status:
                 tone_state = component_status["tone"].get("tone", {}).get("value")
                 return tone_state is not None and tone_state != "off"
-        
+
         return False
 
     @property
@@ -227,7 +240,7 @@ class SmartThingsToneSiren(CoordinatorEntity, SirenEntity):
                     tone = available_tones[0]
                 else:
                     tone = 1  # Default tone
-            
+
             await self._api.send_device_command(
                 self._device_id,
                 "tone",
@@ -249,7 +262,9 @@ class SmartThingsToneSiren(CoordinatorEntity, SirenEntity):
             )
             await self.coordinator.async_request_refresh()
         except Exception as err:
-            _LOGGER.debug("Tone siren %s may not support off command: %s", self._device_id, err)
+            _LOGGER.debug(
+                "Tone siren %s may not support off command: %s", self._device_id, err
+            )
 
     @property
     def icon(self) -> str:

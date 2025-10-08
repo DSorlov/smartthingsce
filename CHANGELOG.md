@@ -152,13 +152,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.1] (2025-10-02)
 
 ### Changed
-- Made `localtunnel-py` a required dependency to ensure real-time webhook functionality
-- Reduced verbosity of localtunnel-related log messages to prevent spam in production logs
+- Made `pyngrok` a required dependency to ensure real-time webhook functionality
 - Improved user experience by automatically installing webhook dependencies
-
-### Fixed
-- Eliminated persistent "localtunnel-py not installed" warnings in production environments
-- Improved integration startup messaging for webhook functionality
 
 ## [1.1.0] (2025-10-01)
 
@@ -265,7 +260,7 @@ Welcome to SmartThings Community Edition! This is the first public release of a 
 ### Added
 - Hub-style integration with Personal Access Token authentication
 - Support for all major SmartThings device types and capabilities
-- Real-time event subscriptions via localtunnel webhook
+- Real-time event subscriptions via pyngrok webhook
 - GUI-based configuration flow
 - Device discovery and automatic entity creation
 - Location and room organization

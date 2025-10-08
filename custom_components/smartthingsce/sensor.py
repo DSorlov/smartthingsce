@@ -221,7 +221,7 @@ async def async_setup_entry(
     for device_id, device in coordinator.devices.items():
         # Get capabilities from the main component
         capability_ids = get_device_capabilities(device)
-        
+
         # Create sensor for each supported capability
         for cap_id in capability_ids:
             if cap_id in SENSOR_TYPES:
@@ -269,7 +269,7 @@ class SmartThingsSensor(CoordinatorEntity, SensorEntity):
         device_status = device.get("status", {})
         main_status = device_status.get("main", {})
         ocf = device.get("ocf", {})
-        
+
         device_info = {
             "identifiers": {(DOMAIN, self._device_id)},
             "name": device.get("label", device.get("name", "Unknown")),
@@ -277,7 +277,7 @@ class SmartThingsSensor(CoordinatorEntity, SensorEntity):
             "model": device.get("deviceTypeName", "Sensor"),
             "sw_version": DEVICE_VERSION,
         }
-        
+
         # Add OCF device information if available
         if ocf:
             if "firmwareVersion" in ocf:
@@ -286,22 +286,25 @@ class SmartThingsSensor(CoordinatorEntity, SensorEntity):
                 device_info["hw_version"] = ocf["hwVersion"]
             if "modelNumber" in ocf:
                 device_info["model"] = ocf["modelNumber"]
-        
+
         # For Samsung appliances, prefer Micom firmware version and otnDUID model
         software_version = main_status.get("samsungce.softwareVersion", {})
         if software_version:
             versions = software_version.get("versions", {}).get("value", [])
             for ver in versions:
-                if ver.get("description") == "Micom" and ver.get("swType") == "Firmware":
+                if (
+                    ver.get("description") == "Micom"
+                    and ver.get("swType") == "Firmware"
+                ):
                     device_info["sw_version"] = ver.get("versionNumber")
                     break
-        
+
         software_update = main_status.get("samsungce.softwareUpdate", {})
         if software_update:
             otn_duid = software_update.get("otnDUID", {}).get("value")
             if otn_duid:
                 device_info["model"] = otn_duid
-        
+
         return DeviceInfo(**device_info)
 
     @property
@@ -309,10 +312,10 @@ class SmartThingsSensor(CoordinatorEntity, SensorEntity):
         """Return the state of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         device_status = device.get("status", {})
-        
+
         # Handle multiple attributes (comma-separated) for refrigeration
         attributes = [attr.strip() for attr in self._attribute.split(",")]
-        
+
         # Try to find the capability in any component, not just "main"
         value = None
         for component_id, component_data in device_status.items():
@@ -326,7 +329,7 @@ class SmartThingsSensor(CoordinatorEntity, SensorEntity):
                         break
                 if value is not None:
                     break
-        
+
         if value is not None:
             # For numeric sensors, try to convert to float
             if self._attr_device_class in [
@@ -344,7 +347,7 @@ class SmartThingsSensor(CoordinatorEntity, SensorEntity):
                     return None
             # For non-numeric sensors (like refrigeration status), return the string value
             return str(value)
-        
+
         return None
 
     @property

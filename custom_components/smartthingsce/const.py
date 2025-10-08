@@ -29,7 +29,7 @@ WEBHOOK_TIMEOUT_SECONDS = 30
 
 # Webhook configuration
 WEBHOOK_PATH = "/api/smartthingsce"
-LOCALTUNNEL_PORT = 8123
+DEFAULT_TUNNEL_PORT = 8123
 
 # Platform support
 PLATFORMS = [
@@ -253,11 +253,11 @@ CAPABILITY_ICONS = {
 def get_device_capabilities(device: dict, component_id: str = "main") -> list:
     """
     Extract capabilities from a SmartThings device.
-    
+
     Args:
         device: The device dictionary from SmartThings API
         component_id: The component ID to get capabilities from (default: "main")
-    
+
     Returns:
         List of capability IDs
     """

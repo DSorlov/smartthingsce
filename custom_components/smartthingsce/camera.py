@@ -1,4 +1,5 @@
 """Camera platform for SmartThings Community Edition."""
+
 from __future__ import annotations
 
 import logging
@@ -34,10 +35,15 @@ async def async_setup_entry(
     entities = []
     for device_id, device in coordinator.devices.items():
         capability_ids = get_device_capabilities(device)
-        
+
         # Check for camera capabilities
-        if any(cap in capability_ids for cap in ["videoStream", "imageCapture", "videoCapture"]):
-            _LOGGER.info("Creating camera for device %s", device.get("label", device_id))
+        if any(
+            cap in capability_ids
+            for cap in ["videoStream", "imageCapture", "videoCapture"]
+        ):
+            _LOGGER.info(
+                "Creating camera for device %s", device.get("label", device_id)
+            )
             entities.append(SmartThingsCamera(coordinator, api, device_id))
 
     async_add_entities(entities)
@@ -80,12 +86,12 @@ class SmartThingsCamera(CoordinatorEntity, Camera):
         """Return supported features."""
         device = self.coordinator.devices.get(self._device_id, {})
         capability_ids = get_device_capabilities(device)
-        
+
         features = CameraEntityFeature(0)
-        
+
         if "videoStream" in capability_ids:
             features |= CameraEntityFeature.STREAM
-            
+
         return features
 
     @property
@@ -93,13 +99,13 @@ class SmartThingsCamera(CoordinatorEntity, Camera):
         """Return true if camera is on."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         # Check switch capability for power state
         for component_id, component_status in status.items():
             if "switch" in component_status:
                 switch_state = component_status["switch"].get("switch", {}).get("value")
                 return switch_state == "on"
-        
+
         # If no switch capability, assume camera is always on
         return True
 
@@ -108,12 +114,14 @@ class SmartThingsCamera(CoordinatorEntity, Camera):
         """Return true if camera is streaming."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "videoStream" in component_status:
-                stream_status = component_status["videoStream"].get("stream", {}).get("value")
+                stream_status = (
+                    component_status["videoStream"].get("stream", {}).get("value")
+                )
                 return stream_status == "active"
-        
+
         return False
 
     @property
@@ -121,12 +129,12 @@ class SmartThingsCamera(CoordinatorEntity, Camera):
         """Return the camera motion detection status."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "motionSensor" in component_status:
                 # If motion sensor capability exists, it's enabled
                 return True
-        
+
         return False
 
     @property
@@ -135,7 +143,7 @@ class SmartThingsCamera(CoordinatorEntity, Camera):
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
         attributes = {}
-        
+
         # Add camera-specific attributes
         for component_id, component_status in status.items():
             # Video stream attributes
@@ -144,19 +152,19 @@ class SmartThingsCamera(CoordinatorEntity, Camera):
                 for key, value_dict in video_data.items():
                     if isinstance(value_dict, dict) and "value" in value_dict:
                         attributes[f"video_{key}"] = value_dict["value"]
-            
+
             # Image capture attributes
             if "imageCapture" in component_status:
                 image_data = component_status["imageCapture"]
                 for key, value_dict in image_data.items():
                     if isinstance(value_dict, dict) and "value" in value_dict:
                         attributes[f"image_{key}"] = value_dict["value"]
-            
+
             # Motion detection
             if "motionSensor" in component_status:
                 motion = component_status["motionSensor"].get("motion", {}).get("value")
                 attributes["motion_detected"] = motion == "active"
-        
+
         return attributes
 
     @property
@@ -173,13 +181,13 @@ class SmartThingsCamera(CoordinatorEntity, Camera):
             # Try to get image from imageCapture capability
             device = self.coordinator.devices.get(self._device_id, {})
             status = device.get("status", {})
-            
+
             image_url = None
             for component_id, component_status in status.items():
                 if "imageCapture" in component_status:
                     # Look for image URL or base64 data
                     image_data = component_status["imageCapture"]
-                    
+
                     if "image" in image_data:
                         image_info = image_data["image"].get("value")
                         if isinstance(image_info, dict):
@@ -187,42 +195,44 @@ class SmartThingsCamera(CoordinatorEntity, Camera):
                         elif isinstance(image_info, str):
                             # Might be a direct URL
                             image_url = image_info
-                    
+
                     # Alternative: encrypted image URL
                     if not image_url and "encryptedImage" in image_data:
                         encrypted_info = image_data["encryptedImage"].get("value", {})
                         if isinstance(encrypted_info, dict):
                             image_url = encrypted_info.get("url")
-                    
+
                     break
-            
+
             if image_url:
                 if not self._session:
                     self._session = async_get_clientsession(self.hass)
-                
+
                 # Fetch the image
                 async with asyncio.timeout(10):
                     async with self._session.get(image_url) as response:
                         if response.status == 200:
                             return await response.read()
                         else:
-                            _LOGGER.warning("Failed to fetch camera image: HTTP %d", response.status)
-            
+                            _LOGGER.warning(
+                                "Failed to fetch camera image: HTTP %d", response.status
+                            )
+
             # Fallback: try to capture a new image
             await self._api.send_device_command(
                 self._device_id,
                 "imageCapture",
                 "take",
             )
-            
+
             # Wait a moment and try again
             await asyncio.sleep(2)
             await self.coordinator.async_request_refresh()
-            
+
             # Try to get the updated image URL
             device = self.coordinator.devices.get(self._device_id, {})
             status = device.get("status", {})
-            
+
             for component_id, component_status in status.items():
                 if "imageCapture" in component_status:
                     image_data = component_status["imageCapture"]
@@ -232,44 +242,50 @@ class SmartThingsCamera(CoordinatorEntity, Camera):
                             image_url = image_info.get("url")
                         elif isinstance(image_info, str):
                             image_url = image_info
-                        
+
                         if image_url and self._session:
                             async with asyncio.timeout(10):
                                 async with self._session.get(image_url) as response:
                                     if response.status == 200:
                                         return await response.read()
                     break
-            
-            _LOGGER.warning("Unable to retrieve camera image for device %s", self._device_id)
+
+            _LOGGER.warning(
+                "Unable to retrieve camera image for device %s", self._device_id
+            )
             return None
-            
+
         except Exception as err:
-            _LOGGER.error("Failed to retrieve camera image %s: %s", self._device_id, err)
+            _LOGGER.error(
+                "Failed to retrieve camera image %s: %s", self._device_id, err
+            )
             return None
 
     async def stream_source(self) -> Optional[str]:
         """Return the source of the stream."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "videoStream" in component_status:
                 stream_data = component_status["videoStream"]
-                
+
                 # Look for stream URL
                 if "stream" in stream_data:
                     stream_info = stream_data["stream"].get("value")
                     if isinstance(stream_info, dict):
                         return stream_info.get("url")
-                    elif isinstance(stream_info, str) and stream_info.startswith("http"):
+                    elif isinstance(stream_info, str) and stream_info.startswith(
+                        "http"
+                    ):
                         return stream_info
-                
+
                 # Alternative: URI field
                 if "uri" in stream_data:
                     uri = stream_data["uri"].get("value")
                     if uri:
                         return uri
-        
+
         return None
 
     async def async_turn_on(self) -> None:
@@ -309,7 +325,11 @@ class SmartThingsCamera(CoordinatorEntity, Camera):
             )
             await self.coordinator.async_request_refresh()
         except Exception as err:
-            _LOGGER.debug("Motion detection control not supported for camera %s: %s", self._device_id, err)
+            _LOGGER.debug(
+                "Motion detection control not supported for camera %s: %s",
+                self._device_id,
+                err,
+            )
 
     async def async_disable_motion_detection(self) -> None:
         """Disable motion detection in the camera."""
@@ -322,7 +342,11 @@ class SmartThingsCamera(CoordinatorEntity, Camera):
             )
             await self.coordinator.async_request_refresh()
         except Exception as err:
-            _LOGGER.debug("Motion detection control not supported for camera %s: %s", self._device_id, err)
+            _LOGGER.debug(
+                "Motion detection control not supported for camera %s: %s",
+                self._device_id,
+                err,
+            )
 
     @property
     def icon(self) -> str:

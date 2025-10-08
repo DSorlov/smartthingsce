@@ -1,4 +1,5 @@
 """Solar Energy platform for SmartThings Community Edition."""
+
 from __future__ import annotations
 
 import logging
@@ -38,48 +39,72 @@ async def async_setup_entry(
     entities = []
     for device_id, device in coordinator.devices.items():
         capability_ids = get_device_capabilities(device)
-        
+
         # Solar/renewable energy devices - check for power source or solar-specific capabilities
-        is_solar_device = any(cap in capability_ids for cap in [
-            "powerSource", "solarPanel", "inverter", "batteryLevel"
-        ])
-        
+        is_solar_device = any(
+            cap in capability_ids
+            for cap in ["powerSource", "solarPanel", "inverter", "batteryLevel"]
+        )
+
         # Also check device type/name for solar equipment
         device_type = device.get("deviceTypeName", "").lower()
         device_label = device.get("label", "").lower()
-        if any(keyword in device_type or keyword in device_label 
-               for keyword in ["solar", "inverter", "panel", "renewable", "generator"]):
+        if any(
+            keyword in device_type or keyword in device_label
+            for keyword in ["solar", "inverter", "panel", "renewable", "generator"]
+        ):
             is_solar_device = True
-            
+
         if is_solar_device:
             device_label = device.get("label", device_id)
-            
+
             # Power Source (solar generation)
             if "powerSource" in capability_ids:
-                _LOGGER.info("Creating solar power source sensor for device %s", device_label)
-                entities.append(SmartThingsSolarPowerSource(coordinator, api, device_id))
-                
+                _LOGGER.info(
+                    "Creating solar power source sensor for device %s", device_label
+                )
+                entities.append(
+                    SmartThingsSolarPowerSource(coordinator, api, device_id)
+                )
+
             # Solar Panel specific sensors
             if "solarPanel" in capability_ids:
                 _LOGGER.info("Creating solar panel sensors for device %s", device_label)
                 entities.append(SmartThingsSolarPanelPower(coordinator, api, device_id))
-                entities.append(SmartThingsSolarPanelEnergy(coordinator, api, device_id))
-                
+                entities.append(
+                    SmartThingsSolarPanelEnergy(coordinator, api, device_id)
+                )
+
             # Inverter sensors
             if "inverter" in capability_ids:
-                _LOGGER.info("Creating solar inverter sensors for device %s", device_label)
-                entities.append(SmartThingsSolarInverterStatus(coordinator, api, device_id))
-                entities.append(SmartThingsSolarInverterEfficiency(coordinator, api, device_id))
-                
+                _LOGGER.info(
+                    "Creating solar inverter sensors for device %s", device_label
+                )
+                entities.append(
+                    SmartThingsSolarInverterStatus(coordinator, api, device_id)
+                )
+                entities.append(
+                    SmartThingsSolarInverterEfficiency(coordinator, api, device_id)
+                )
+
             # Battery storage (for solar + storage systems)
             if "batteryLevel" in capability_ids:
-                _LOGGER.info("Creating solar battery storage sensor for device %s", device_label)
-                entities.append(SmartThingsSolarBatteryLevel(coordinator, api, device_id))
-                
+                _LOGGER.info(
+                    "Creating solar battery storage sensor for device %s", device_label
+                )
+                entities.append(
+                    SmartThingsSolarBatteryLevel(coordinator, api, device_id)
+                )
+
             # Enhanced energy monitoring for solar systems
             if "energyMeter" in capability_ids:
-                _LOGGER.info("Creating solar energy production sensor for device %s", device_label)
-                entities.append(SmartThingsSolarEnergyProduction(coordinator, api, device_id))
+                _LOGGER.info(
+                    "Creating solar energy production sensor for device %s",
+                    device_label,
+                )
+                entities.append(
+                    SmartThingsSolarEnergyProduction(coordinator, api, device_id)
+                )
 
     async_add_entities(entities)
 
@@ -120,12 +145,14 @@ class SmartThingsSolarPowerSource(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "powerSource" in component_status:
-                source = component_status["powerSource"].get("powerSource", {}).get("value")
+                source = (
+                    component_status["powerSource"].get("powerSource", {}).get("value")
+                )
                 return source
-        
+
         return None
 
     @property
@@ -194,16 +221,20 @@ class SmartThingsSolarPanelPower(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "solarPanel" in component_status:
-                power = component_status["solarPanel"].get("powerGeneration", {}).get("value")
+                power = (
+                    component_status["solarPanel"]
+                    .get("powerGeneration", {})
+                    .get("value")
+                )
                 if power is not None:
                     try:
                         return float(power)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
@@ -212,19 +243,19 @@ class SmartThingsSolarPanelPower(CoordinatorEntity, SensorEntity):
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
         attributes = {}
-        
+
         for component_id, component_status in status.items():
             if "solarPanel" in component_status:
                 solar_data = component_status["solarPanel"]
-                
+
                 # Add solar panel specific attributes
                 for key, value_dict in solar_data.items():
                     if isinstance(value_dict, dict) and "value" in value_dict:
                         if key != "powerGeneration":
                             attributes[f"solar_{key}"] = value_dict["value"]
-                
+
                 break
-        
+
         return attributes
 
     @property
@@ -277,17 +308,21 @@ class SmartThingsSolarPanelEnergy(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "solarPanel" in component_status:
-                energy = component_status["solarPanel"].get("energyGeneration", {}).get("value")
+                energy = (
+                    component_status["solarPanel"]
+                    .get("energyGeneration", {})
+                    .get("value")
+                )
                 if energy is not None:
                     try:
                         # Convert Wh to kWh
                         return float(energy) / 1000.0
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
@@ -338,12 +373,14 @@ class SmartThingsSolarInverterStatus(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "inverter" in component_status:
-                inverter_status = component_status["inverter"].get("inverterStatus", {}).get("value")
+                inverter_status = (
+                    component_status["inverter"].get("inverterStatus", {}).get("value")
+                )
                 return inverter_status
-        
+
         return None
 
     @property
@@ -411,16 +448,18 @@ class SmartThingsSolarInverterEfficiency(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "inverter" in component_status:
-                efficiency = component_status["inverter"].get("efficiency", {}).get("value")
+                efficiency = (
+                    component_status["inverter"].get("efficiency", {}).get("value")
+                )
                 if efficiency is not None:
                     try:
                         return float(efficiency)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
@@ -473,16 +512,18 @@ class SmartThingsSolarBatteryLevel(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "batteryLevel" in component_status:
-                battery = component_status["batteryLevel"].get("battery", {}).get("value")
+                battery = (
+                    component_status["batteryLevel"].get("battery", {}).get("value")
+                )
                 if battery is not None:
                     try:
                         return float(battery)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
@@ -557,7 +598,7 @@ class SmartThingsSolarEnergyProduction(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "energyMeter" in component_status:
                 energy = component_status["energyMeter"].get("energy", {}).get("value")
@@ -567,7 +608,7 @@ class SmartThingsSolarEnergyProduction(CoordinatorEntity, SensorEntity):
                         return float(energy) / 1000.0
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property

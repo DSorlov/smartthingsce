@@ -1,4 +1,5 @@
 """Traditional thermostat platform for SmartThings Community Edition."""
+
 from __future__ import annotations
 
 import logging
@@ -65,12 +66,17 @@ async def async_setup_entry(
 
     for device_id, device in coordinator.devices.items():
         capability_ids = get_device_capabilities(device)
-        
+
         # Create thermostat entity for devices with thermostatMode capability
         # This is different from refrigerator thermostats which only have thermostatCoolingSetpoint
         if "thermostatMode" in capability_ids:
-            _LOGGER.info("Creating traditional thermostat for device %s", device.get("label", device_id))
-            entities.append(SmartThingsTraditionalThermostat(coordinator, api, device_id))
+            _LOGGER.info(
+                "Creating traditional thermostat for device %s",
+                device.get("label", device_id),
+            )
+            entities.append(
+                SmartThingsTraditionalThermostat(coordinator, api, device_id)
+            )
 
     async_add_entities(entities)
 
@@ -117,22 +123,22 @@ class SmartThingsTraditionalThermostat(CoordinatorEntity, ClimateEntity):
         """Return the list of supported features."""
         device = self.coordinator.devices.get(self._device_id, {})
         capability_ids = get_device_capabilities(device)
-        
+
         features = ClimateEntityFeature(0)
-        
+
         if "thermostatHeatingSetpoint" in capability_ids:
             features |= ClimateEntityFeature.TARGET_TEMPERATURE
-            
+
         if "thermostatCoolingSetpoint" in capability_ids:
             if features & ClimateEntityFeature.TARGET_TEMPERATURE:
                 # Has both heating and cooling - use target temperature range
                 features |= ClimateEntityFeature.TARGET_TEMPERATURE_RANGE
             else:
                 features |= ClimateEntityFeature.TARGET_TEMPERATURE
-                
+
         if "thermostatFanMode" in capability_ids:
             features |= ClimateEntityFeature.FAN_MODE
-            
+
         return features
 
     @property
@@ -140,14 +146,21 @@ class SmartThingsTraditionalThermostat(CoordinatorEntity, ClimateEntity):
         """Return the list of available hvac operation modes."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         # Get supported modes from device status
         for component_id, component_status in status.items():
             if "thermostatMode" in component_status:
-                supported_modes = component_status["thermostatMode"].get("supportedThermostatModes", {}).get("value", [])
+                supported_modes = (
+                    component_status["thermostatMode"]
+                    .get("supportedThermostatModes", {})
+                    .get("value", [])
+                )
                 if supported_modes:
-                    return [SMARTTHINGS_HVAC_MODES.get(mode, HVACMode.OFF) for mode in supported_modes]
-        
+                    return [
+                        SMARTTHINGS_HVAC_MODES.get(mode, HVACMode.OFF)
+                        for mode in supported_modes
+                    ]
+
         # Default modes
         return [HVACMode.OFF, HVACMode.HEAT, HVACMode.COOL, HVACMode.AUTO]
 
@@ -156,12 +169,16 @@ class SmartThingsTraditionalThermostat(CoordinatorEntity, ClimateEntity):
         """Return current operation mode."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "thermostatMode" in component_status:
-                mode = component_status["thermostatMode"].get("thermostatMode", {}).get("value")
+                mode = (
+                    component_status["thermostatMode"]
+                    .get("thermostatMode", {})
+                    .get("value")
+                )
                 return SMARTTHINGS_HVAC_MODES.get(mode, HVACMode.OFF)
-        
+
         return HVACMode.OFF
 
     @property
@@ -169,12 +186,16 @@ class SmartThingsTraditionalThermostat(CoordinatorEntity, ClimateEntity):
         """Return the current running hvac operation."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "thermostatOperatingState" in component_status:
-                operating_state = component_status["thermostatOperatingState"].get("thermostatOperatingState", {}).get("value")
+                operating_state = (
+                    component_status["thermostatOperatingState"]
+                    .get("thermostatOperatingState", {})
+                    .get("value")
+                )
                 return SMARTTHINGS_HVAC_ACTIONS.get(operating_state, HVACAction.IDLE)
-        
+
         return HVACAction.IDLE
 
     @property
@@ -182,17 +203,19 @@ class SmartThingsTraditionalThermostat(CoordinatorEntity, ClimateEntity):
         """Return the current temperature."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "temperatureMeasurement" in component_status:
-                temp_data = component_status["temperatureMeasurement"].get("temperature", {})
+                temp_data = component_status["temperatureMeasurement"].get(
+                    "temperature", {}
+                )
                 temp_value = temp_data.get("value")
                 if temp_value is not None:
                     try:
                         return float(temp_value)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
@@ -200,7 +223,7 @@ class SmartThingsTraditionalThermostat(CoordinatorEntity, ClimateEntity):
         """Return the temperature we try to reach."""
         # For single setpoint mode, return the active setpoint
         current_mode = self.hvac_mode
-        
+
         if current_mode == HVACMode.HEAT:
             return self.target_temperature_low
         elif current_mode == HVACMode.COOL:
@@ -211,7 +234,7 @@ class SmartThingsTraditionalThermostat(CoordinatorEntity, ClimateEntity):
             high = self.target_temperature_high
             if low is not None and high is not None:
                 return (low + high) / 2
-        
+
         return None
 
     @property
@@ -219,17 +242,19 @@ class SmartThingsTraditionalThermostat(CoordinatorEntity, ClimateEntity):
         """Return the highbound target temperature we try to reach."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "thermostatCoolingSetpoint" in component_status:
-                setpoint_data = component_status["thermostatCoolingSetpoint"].get("coolingSetpoint", {})
+                setpoint_data = component_status["thermostatCoolingSetpoint"].get(
+                    "coolingSetpoint", {}
+                )
                 setpoint_value = setpoint_data.get("value")
                 if setpoint_value is not None:
                     try:
                         return float(setpoint_value)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
@@ -237,17 +262,19 @@ class SmartThingsTraditionalThermostat(CoordinatorEntity, ClimateEntity):
         """Return the lowbound target temperature we try to reach."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "thermostatHeatingSetpoint" in component_status:
-                setpoint_data = component_status["thermostatHeatingSetpoint"].get("heatingSetpoint", {})
+                setpoint_data = component_status["thermostatHeatingSetpoint"].get(
+                    "heatingSetpoint", {}
+                )
                 setpoint_value = setpoint_data.get("value")
                 if setpoint_value is not None:
                     try:
                         return float(setpoint_value)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
@@ -255,12 +282,16 @@ class SmartThingsTraditionalThermostat(CoordinatorEntity, ClimateEntity):
         """Return the fan setting."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "thermostatFanMode" in component_status:
-                fan_mode = component_status["thermostatFanMode"].get("thermostatFanMode", {}).get("value")
+                fan_mode = (
+                    component_status["thermostatFanMode"]
+                    .get("thermostatFanMode", {})
+                    .get("value")
+                )
                 return SMARTTHINGS_FAN_MODES.get(fan_mode, fan_mode)
-        
+
         return None
 
     @property
@@ -268,13 +299,20 @@ class SmartThingsTraditionalThermostat(CoordinatorEntity, ClimateEntity):
         """Return the list of available fan modes."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "thermostatFanMode" in component_status:
-                supported_modes = component_status["thermostatFanMode"].get("supportedThermostatFanModes", {}).get("value", [])
+                supported_modes = (
+                    component_status["thermostatFanMode"]
+                    .get("supportedThermostatFanModes", {})
+                    .get("value", [])
+                )
                 if supported_modes:
-                    return [SMARTTHINGS_FAN_MODES.get(mode, mode) for mode in supported_modes]
-        
+                    return [
+                        SMARTTHINGS_FAN_MODES.get(mode, mode)
+                        for mode in supported_modes
+                    ]
+
         return None
 
     @property
@@ -306,7 +344,7 @@ class SmartThingsTraditionalThermostat(CoordinatorEntity, ClimateEntity):
             if ha_value == hvac_mode:
                 st_mode = st_key
                 break
-        
+
         if st_mode is None:
             _LOGGER.error("Unsupported HVAC mode: %s", hvac_mode)
             return
@@ -320,14 +358,16 @@ class SmartThingsTraditionalThermostat(CoordinatorEntity, ClimateEntity):
             )
             await self.coordinator.async_request_refresh()
         except Exception as err:
-            _LOGGER.error("Failed to set HVAC mode for device %s: %s", self._device_id, err)
+            _LOGGER.error(
+                "Failed to set HVAC mode for device %s: %s", self._device_id, err
+            )
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set new target temperature."""
         target_temp_low = kwargs.get("target_temp_low")
         target_temp_high = kwargs.get("target_temp_high")
         temperature = kwargs.get(ATTR_TEMPERATURE)
-        
+
         try:
             # Handle temperature range (dual setpoint)
             if target_temp_low is not None:
@@ -337,7 +377,7 @@ class SmartThingsTraditionalThermostat(CoordinatorEntity, ClimateEntity):
                     "setHeatingSetpoint",
                     [int(target_temp_low)],
                 )
-            
+
             if target_temp_high is not None:
                 await self._api.send_device_command(
                     self._device_id,
@@ -345,11 +385,15 @@ class SmartThingsTraditionalThermostat(CoordinatorEntity, ClimateEntity):
                     "setCoolingSetpoint",
                     [int(target_temp_high)],
                 )
-            
+
             # Handle single temperature (based on current mode)
-            if temperature is not None and target_temp_low is None and target_temp_high is None:
+            if (
+                temperature is not None
+                and target_temp_low is None
+                and target_temp_high is None
+            ):
                 current_mode = self.hvac_mode
-                
+
                 if current_mode == HVACMode.HEAT:
                     await self._api.send_device_command(
                         self._device_id,
@@ -365,11 +409,15 @@ class SmartThingsTraditionalThermostat(CoordinatorEntity, ClimateEntity):
                         [int(temperature)],
                     )
                 else:
-                    _LOGGER.warning("Cannot set single temperature in mode %s", current_mode)
-            
+                    _LOGGER.warning(
+                        "Cannot set single temperature in mode %s", current_mode
+                    )
+
             await self.coordinator.async_request_refresh()
         except Exception as err:
-            _LOGGER.error("Failed to set temperature for device %s: %s", self._device_id, err)
+            _LOGGER.error(
+                "Failed to set temperature for device %s: %s", self._device_id, err
+            )
 
     async def async_set_fan_mode(self, fan_mode: str) -> None:
         """Set new target fan mode."""
@@ -379,7 +427,7 @@ class SmartThingsTraditionalThermostat(CoordinatorEntity, ClimateEntity):
             if ha_value == fan_mode:
                 st_fan_mode = st_key
                 break
-        
+
         # If not found in mapping, use the value directly
         if st_fan_mode is None:
             st_fan_mode = fan_mode
@@ -393,7 +441,9 @@ class SmartThingsTraditionalThermostat(CoordinatorEntity, ClimateEntity):
             )
             await self.coordinator.async_request_refresh()
         except Exception as err:
-            _LOGGER.error("Failed to set fan mode for device %s: %s", self._device_id, err)
+            _LOGGER.error(
+                "Failed to set fan mode for device %s: %s", self._device_id, err
+            )
 
     @property
     def icon(self) -> str:

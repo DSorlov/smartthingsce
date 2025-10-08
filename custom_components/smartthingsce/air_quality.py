@@ -1,4 +1,5 @@
 """Air Quality sensor platform for SmartThings Community Edition."""
+
 from __future__ import annotations
 
 import logging
@@ -27,11 +28,11 @@ _LOGGER = logging.getLogger(__name__)
 # Air Quality Index mapping
 AIR_QUALITY_INDEX_MAP = {
     1: "Good",
-    2: "Moderate", 
+    2: "Moderate",
     3: "Unhealthy for Sensitive Groups",
     4: "Unhealthy",
     5: "Very Unhealthy",
-    6: "Hazardous"
+    6: "Hazardous",
 }
 
 
@@ -47,31 +48,46 @@ async def async_setup_entry(
     entities = []
     for device_id, device in coordinator.devices.items():
         capability_ids = get_device_capabilities(device)
-        
+
         # Air Quality Detector
         if "airQualityDetector" in capability_ids:
-            _LOGGER.info("Creating air quality index sensor for device %s", device.get("label", device_id))
+            _LOGGER.info(
+                "Creating air quality index sensor for device %s",
+                device.get("label", device_id),
+            )
             entities.append(SmartThingsAirQualityIndex(coordinator, api, device_id))
-            
+
         # Dust Sensor (PM2.5/PM10)
         if "dustSensor" in capability_ids:
-            _LOGGER.info("Creating dust sensor for device %s", device.get("label", device_id))
+            _LOGGER.info(
+                "Creating dust sensor for device %s", device.get("label", device_id)
+            )
             entities.append(SmartThingsDustSensor(coordinator, api, device_id))
-            
+
         # TVOC Measurement (Total Volatile Organic Compounds)
         if "tvocMeasurement" in capability_ids:
-            _LOGGER.info("Creating TVOC sensor for device %s", device.get("label", device_id))
+            _LOGGER.info(
+                "Creating TVOC sensor for device %s", device.get("label", device_id)
+            )
             entities.append(SmartThingsTVOCSensor(coordinator, api, device_id))
-            
+
         # Formaldehyde Measurement
         if "formaldehydeMeasurement" in capability_ids:
-            _LOGGER.info("Creating formaldehyde sensor for device %s", device.get("label", device_id))
+            _LOGGER.info(
+                "Creating formaldehyde sensor for device %s",
+                device.get("label", device_id),
+            )
             entities.append(SmartThingsFormaldehydeSensor(coordinator, api, device_id))
-            
+
         # Air Quality Health Concern
         if "airQualityHealthConcern" in capability_ids:
-            _LOGGER.info("Creating air quality health concern sensor for device %s", device.get("label", device_id))
-            entities.append(SmartThingsAirQualityHealthConcern(coordinator, api, device_id))
+            _LOGGER.info(
+                "Creating air quality health concern sensor for device %s",
+                device.get("label", device_id),
+            )
+            entities.append(
+                SmartThingsAirQualityHealthConcern(coordinator, api, device_id)
+            )
 
     async_add_entities(entities)
 
@@ -113,16 +129,20 @@ class SmartThingsAirQualityIndex(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "airQualityDetector" in component_status:
-                aqi = component_status["airQualityDetector"].get("airQuality", {}).get("value")
+                aqi = (
+                    component_status["airQualityDetector"]
+                    .get("airQuality", {})
+                    .get("value")
+                )
                 if aqi is not None:
                     try:
                         return int(aqi)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
@@ -130,10 +150,12 @@ class SmartThingsAirQualityIndex(CoordinatorEntity, SensorEntity):
         """Return additional state attributes."""
         aqi_value = self.native_value
         attributes = {}
-        
+
         if aqi_value is not None:
-            attributes["aqi_description"] = AIR_QUALITY_INDEX_MAP.get(aqi_value, "Unknown")
-            
+            attributes["aqi_description"] = AIR_QUALITY_INDEX_MAP.get(
+                aqi_value, "Unknown"
+            )
+
         return attributes
 
     @property
@@ -186,12 +208,12 @@ class SmartThingsDustSensor(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "dustSensor" in component_status:
                 # Try PM2.5 first, then PM10, then generic dust level
                 dust_data = component_status["dustSensor"]
-                
+
                 if "fineDustLevel" in dust_data:
                     pm25 = dust_data["fineDustLevel"].get("value")
                     if pm25 is not None:
@@ -199,7 +221,7 @@ class SmartThingsDustSensor(CoordinatorEntity, SensorEntity):
                             return float(pm25)
                         except (ValueError, TypeError):
                             pass
-                            
+
                 if "dustLevel" in dust_data:
                     dust = dust_data["dustLevel"].get("value")
                     if dust is not None:
@@ -207,7 +229,7 @@ class SmartThingsDustSensor(CoordinatorEntity, SensorEntity):
                             return float(dust)
                         except (ValueError, TypeError):
                             pass
-        
+
         return None
 
     @property
@@ -216,25 +238,25 @@ class SmartThingsDustSensor(CoordinatorEntity, SensorEntity):
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
         attributes = {}
-        
+
         for component_id, component_status in status.items():
             if "dustSensor" in component_status:
                 dust_data = component_status["dustSensor"]
-                
+
                 # Add PM10 if available
                 if "dustLevel" in dust_data:
                     pm10 = dust_data["dustLevel"].get("value")
                     if pm10 is not None:
                         attributes["pm10"] = pm10
-                        
+
                 # Add fine dust level (PM2.5) separately if we're showing PM10 as main
                 if "fineDustLevel" in dust_data:
                     pm25 = dust_data["fineDustLevel"].get("value")
                     if pm25 is not None and self.name != "PM2.5":
                         attributes["pm25"] = pm25
-                
+
                 break
-        
+
         return attributes
 
     @property
@@ -287,16 +309,20 @@ class SmartThingsTVOCSensor(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "tvocMeasurement" in component_status:
-                tvoc = component_status["tvocMeasurement"].get("tvocLevel", {}).get("value")
+                tvoc = (
+                    component_status["tvocMeasurement"]
+                    .get("tvocLevel", {})
+                    .get("value")
+                )
                 if tvoc is not None:
                     try:
                         return float(tvoc)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
@@ -348,16 +374,20 @@ class SmartThingsFormaldehydeSensor(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "formaldehydeMeasurement" in component_status:
-                formaldehyde = component_status["formaldehydeMeasurement"].get("formaldehydeLevel", {}).get("value")
+                formaldehyde = (
+                    component_status["formaldehydeMeasurement"]
+                    .get("formaldehydeLevel", {})
+                    .get("value")
+                )
                 if formaldehyde is not None:
                     try:
                         return float(formaldehyde)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
@@ -407,12 +437,16 @@ class SmartThingsAirQualityHealthConcern(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "airQualityHealthConcern" in component_status:
-                concern = component_status["airQualityHealthConcern"].get("airQualityHealthConcern", {}).get("value")
+                concern = (
+                    component_status["airQualityHealthConcern"]
+                    .get("airQualityHealthConcern", {})
+                    .get("value")
+                )
                 return concern
-        
+
         return None
 
     @property
@@ -435,5 +469,5 @@ class SmartThingsAirQualityHealthConcern(CoordinatorEntity, SensorEntity):
                 return "mdi:emoticon-sad"
             elif "hazardous" in concern_lower:
                 return "mdi:emoticon-dead"
-        
+
         return "mdi:air-filter"

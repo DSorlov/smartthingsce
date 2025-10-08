@@ -6,8 +6,8 @@
   "dependencies": [],
   "documentation": "https://github.com/DSorlov/smartthingsce",
   "homekit": {},
-  "iot_class": "cloud_polling",
+  "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/DSorlov/smartthingsce/issues",
-  "requirements": ["localtunnel-py>=0.2.0"],
+  "requirements": ["pyngrok>=7.0.0"],
   "version": "1.5.0"
 }

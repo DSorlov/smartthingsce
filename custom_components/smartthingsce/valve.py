@@ -1,4 +1,5 @@
 """Valve platform for SmartThings Community Edition."""
+
 from __future__ import annotations
 
 import logging
@@ -32,22 +33,30 @@ async def async_setup_entry(
     entities = []
     for device_id, device in coordinator.devices.items():
         capability_ids = get_device_capabilities(device)
-        
+
         # Check for valve capability
         if "valve" in capability_ids:
             # Determine valve type based on device information
             device_type = device.get("deviceTypeName", "").lower()
             device_label = device.get("label", "").lower()
-            
+
             valve_class = ValveDeviceClass.WATER
-            if any(keyword in device_type or keyword in device_label 
-                   for keyword in ["gas", "fuel"]):
+            if any(
+                keyword in device_type or keyword in device_label
+                for keyword in ["gas", "fuel"]
+            ):
                 valve_class = ValveDeviceClass.GAS
-            elif any(keyword in device_type or keyword in device_label 
-                     for keyword in ["irrigation", "sprinkler", "garden"]):
+            elif any(
+                keyword in device_type or keyword in device_label
+                for keyword in ["irrigation", "sprinkler", "garden"]
+            ):
                 valve_class = ValveDeviceClass.WATER
-            
-            _LOGGER.info("Creating valve for device %s with class %s", device.get("label", device_id), valve_class)
+
+            _LOGGER.info(
+                "Creating valve for device %s with class %s",
+                device.get("label", device_id),
+                valve_class,
+            )
             entities.append(SmartThingsValve(coordinator, api, device_id, valve_class))
 
     async_add_entities(entities)
@@ -59,7 +68,9 @@ class SmartThingsValve(CoordinatorEntity, ValveEntity):
     _attr_has_entity_name = True
     _attr_attribution = ATTRIBUTION
 
-    def __init__(self, coordinator, api, device_id: str, valve_class: ValveDeviceClass) -> None:
+    def __init__(
+        self, coordinator, api, device_id: str, valve_class: ValveDeviceClass
+    ) -> None:
         """Initialize the valve."""
         super().__init__(coordinator)
         self._api = api
@@ -95,12 +106,12 @@ class SmartThingsValve(CoordinatorEntity, ValveEntity):
         """Return if the valve is closed."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "valve" in component_status:
                 valve_state = component_status["valve"].get("valve", {}).get("value")
                 return valve_state == "closed"
-        
+
         return None
 
     @property
@@ -108,12 +119,12 @@ class SmartThingsValve(CoordinatorEntity, ValveEntity):
         """Return if the valve is closing."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "valve" in component_status:
                 valve_state = component_status["valve"].get("valve", {}).get("value")
                 return valve_state == "closing"
-        
+
         return False
 
     @property
@@ -121,12 +132,12 @@ class SmartThingsValve(CoordinatorEntity, ValveEntity):
         """Return if the valve is opening."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "valve" in component_status:
                 valve_state = component_status["valve"].get("valve", {}).get("value")
                 return valve_state == "opening"
-        
+
         return False
 
     @property
@@ -152,24 +163,24 @@ class SmartThingsValve(CoordinatorEntity, ValveEntity):
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
         attributes = {}
-        
+
         # Add valve-specific attributes if available
         for component_id, component_status in status.items():
             if "valve" in component_status:
                 valve_data = component_status["valve"]
-                
+
                 # Add raw valve state
                 if "valve" in valve_data:
                     attributes["valve_state"] = valve_data["valve"].get("value")
-                
+
                 # Add any additional valve properties
                 for key, value_dict in valve_data.items():
                     if key != "valve" and isinstance(value_dict, dict):
                         if "value" in value_dict:
                             attributes[f"valve_{key}"] = value_dict["value"]
-                
+
                 break
-        
+
         return attributes
 
     @property

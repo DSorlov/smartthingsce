@@ -29,8 +29,10 @@ async def async_setup_entry(
     for device_id, device in coordinator.devices.items():
         # Get capabilities - SmartThings API returns them as a list at device level
         capabilities = device.get("capabilities", [])
-        capability_ids = [cap.get("id") if isinstance(cap, dict) else cap for cap in capabilities]
-        
+        capability_ids = [
+            cap.get("id") if isinstance(cap, dict) else cap for cap in capabilities
+        ]
+
         # Check if device has lock capability
         if "lock" in capability_ids:
             entities.append(SmartThingsLock(coordinator, api, device_id))

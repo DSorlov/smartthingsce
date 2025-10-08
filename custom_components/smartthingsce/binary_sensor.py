@@ -120,7 +120,7 @@ async def async_setup_entry(
     for device_id, device in coordinator.devices.items():
         # Get capabilities from the main component
         capability_ids = get_device_capabilities(device)
-        
+
         # Create binary sensor for each supported capability
         for cap_id in capability_ids:
             if cap_id in BINARY_SENSOR_TYPES:
@@ -165,7 +165,7 @@ class SmartThingsBinarySensor(CoordinatorEntity, BinarySensorEntity):
         """Return device information."""
         device = self.coordinator.devices.get(self._device_id, {})
         ocf = device.get("ocf", {})
-        
+
         device_info = {
             "identifiers": {(DOMAIN, self._device_id)},
             "name": device.get("label", device.get("name", "Unknown")),
@@ -173,7 +173,7 @@ class SmartThingsBinarySensor(CoordinatorEntity, BinarySensorEntity):
             "model": device.get("deviceTypeName", "Sensor"),
             "sw_version": DEVICE_VERSION,
         }
-        
+
         # Add OCF device information if available
         if ocf:
             if "firmwareVersion" in ocf:
@@ -182,7 +182,7 @@ class SmartThingsBinarySensor(CoordinatorEntity, BinarySensorEntity):
                 device_info["hw_version"] = ocf["hwVersion"]
             if "modelNumber" in ocf:
                 device_info["model"] = ocf["modelNumber"]
-        
+
         return DeviceInfo(**device_info)
 
     @property
@@ -190,7 +190,7 @@ class SmartThingsBinarySensor(CoordinatorEntity, BinarySensorEntity):
         """Return true if the binary sensor is on."""
         device = self.coordinator.devices.get(self._device_id, {})
         device_status = device.get("status", {})
-        
+
         # Try to find the capability in any component, not just "main"
         value = None
         for component_id, component_data in device_status.items():
@@ -199,10 +199,10 @@ class SmartThingsBinarySensor(CoordinatorEntity, BinarySensorEntity):
                 value = capability_data.get(self._attribute, {}).get("value")
                 if value is not None:
                     break
-        
+
         if value is not None:
             return value == self._on_state
-        
+
         return None
 
     @property

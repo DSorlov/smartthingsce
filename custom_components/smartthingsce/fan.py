@@ -1,4 +1,5 @@
 """Fan platform for SmartThings Community Edition."""
+
 from __future__ import annotations
 
 import logging
@@ -39,16 +40,24 @@ async def async_setup_entry(
     entities = []
     for device_id, device in coordinator.devices.items():
         capability_ids = get_device_capabilities(device)
-        
+
         # Check for fan capabilities
         if "fanSpeed" in capability_ids:
-            _LOGGER.info("Creating fan speed control for device %s", device.get("label", device_id))
+            _LOGGER.info(
+                "Creating fan speed control for device %s",
+                device.get("label", device_id),
+            )
             entities.append(SmartThingsFanSpeedControl(coordinator, api, device_id))
         elif "switch" in capability_ids:
             # Check if this is actually a fan device by checking device type
             device_type = device.get("deviceTypeName", "").lower()
-            if any(fan_type in device_type for fan_type in ["fan", "ventilator", "exhaust"]):
-                _LOGGER.info("Creating simple fan switch for device %s", device.get("label", device_id))
+            if any(
+                fan_type in device_type for fan_type in ["fan", "ventilator", "exhaust"]
+            ):
+                _LOGGER.info(
+                    "Creating simple fan switch for device %s",
+                    device.get("label", device_id),
+                )
                 entities.append(SmartThingsFanSwitch(coordinator, api, device_id))
 
     async_add_entities(entities)
@@ -96,19 +105,21 @@ class SmartThingsFanSpeedControl(CoordinatorEntity, FanEntity):
         """Return true if the fan is on."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         # Check fanSpeed capability first
         for component_id, component_status in status.items():
             if "fanSpeed" in component_status:
-                fan_speed = component_status["fanSpeed"].get("fanSpeed", {}).get("value")
+                fan_speed = (
+                    component_status["fanSpeed"].get("fanSpeed", {}).get("value")
+                )
                 return fan_speed is not None and fan_speed != "off" and fan_speed != 0
-        
+
         # Fall back to switch capability if present
         for component_id, component_status in status.items():
             if "switch" in component_status:
                 switch_state = component_status["switch"].get("switch", {}).get("value")
                 return switch_state == "on"
-        
+
         return False
 
     @property
@@ -116,14 +127,16 @@ class SmartThingsFanSpeedControl(CoordinatorEntity, FanEntity):
         """Return the current speed percentage."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "fanSpeed" in component_status:
-                fan_speed = component_status["fanSpeed"].get("fanSpeed", {}).get("value")
-                
+                fan_speed = (
+                    component_status["fanSpeed"].get("fanSpeed", {}).get("value")
+                )
+
                 if fan_speed is None or fan_speed == "off":
                     return 0
-                
+
                 # Handle numeric values (0-100 or 0-5 range)
                 if isinstance(fan_speed, (int, float)):
                     # If it's in 0-5 range, convert to percentage
@@ -134,7 +147,7 @@ class SmartThingsFanSpeedControl(CoordinatorEntity, FanEntity):
                         return int(fan_speed)
                     else:
                         return 100
-                
+
                 # Handle string values
                 if isinstance(fan_speed, str):
                     try:
@@ -152,7 +165,7 @@ class SmartThingsFanSpeedControl(CoordinatorEntity, FanEntity):
                             return ordered_list_item_to_percentage(
                                 SMARTTHINGS_FAN_SPEEDS, fan_speed.lower()
                             )
-        
+
         return 0
 
     @property
@@ -205,7 +218,7 @@ class SmartThingsFanSpeedControl(CoordinatorEntity, FanEntity):
                 # Convert percentage to 1-4 scale (0 is off)
                 fan_speed = math.ceil(percentage / 25)
                 fan_speed = max(1, min(4, fan_speed))
-            
+
             await self._api.send_device_command(
                 self._device_id,
                 "fanSpeed",

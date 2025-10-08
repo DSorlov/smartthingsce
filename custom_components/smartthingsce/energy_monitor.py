@@ -1,4 +1,5 @@
 """Energy Monitor sensor platform for SmartThings Community Edition."""
+
 from __future__ import annotations
 
 import logging
@@ -38,31 +39,37 @@ async def async_setup_entry(
     entities = []
     for device_id, device in coordinator.devices.items():
         capability_ids = get_device_capabilities(device)
-        
+
         # Check for energy monitoring capabilities
-        has_energy_capabilities = any(cap in capability_ids for cap in [
-            "energyMeter", "powerMeter", "voltageMeasurement", "currentMeasurement"
-        ])
-        
+        has_energy_capabilities = any(
+            cap in capability_ids
+            for cap in [
+                "energyMeter",
+                "powerMeter",
+                "voltageMeasurement",
+                "currentMeasurement",
+            ]
+        )
+
         if has_energy_capabilities:
             device_label = device.get("label", device_id)
-            
+
             # Energy Meter (cumulative energy consumption)
             if "energyMeter" in capability_ids:
                 _LOGGER.info("Creating energy meter sensor for device %s", device_label)
                 entities.append(SmartThingsEnergyMeter(coordinator, api, device_id))
-            
-            # Power Meter (instantaneous power consumption)  
+
+            # Power Meter (instantaneous power consumption)
             if "powerMeter" in capability_ids:
                 _LOGGER.info("Creating power meter sensor for device %s", device_label)
                 entities.append(SmartThingsPowerMeter(coordinator, api, device_id))
-            
+
             # Voltage Measurement
             if "voltageMeasurement" in capability_ids:
                 _LOGGER.info("Creating voltage sensor for device %s", device_label)
                 entities.append(SmartThingsVoltageSensor(coordinator, api, device_id))
-            
-            # Current Measurement  
+
+            # Current Measurement
             if "currentMeasurement" in capability_ids:
                 _LOGGER.info("Creating current sensor for device %s", device_label)
                 entities.append(SmartThingsCurrentSensor(coordinator, api, device_id))
@@ -108,7 +115,7 @@ class SmartThingsEnergyMeter(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "energyMeter" in component_status:
                 energy = component_status["energyMeter"].get("energy", {}).get("value")
@@ -118,7 +125,7 @@ class SmartThingsEnergyMeter(CoordinatorEntity, SensorEntity):
                         return float(energy) / 1000.0
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
@@ -127,31 +134,33 @@ class SmartThingsEnergyMeter(CoordinatorEntity, SensorEntity):
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
         attributes = {}
-        
+
         for component_id, component_status in status.items():
             if "energyMeter" in component_status:
                 energy_data = component_status["energyMeter"]
-                
+
                 # Add raw energy value in Wh
                 if "energy" in energy_data:
                     raw_energy = energy_data["energy"].get("value")
                     if raw_energy is not None:
                         attributes["energy_wh"] = raw_energy
-                
+
                 # Add energy meter delta if available
                 if "deltaEnergy" in energy_data:
                     delta = energy_data["deltaEnergy"].get("value")
                     if delta is not None:
                         attributes["delta_energy_wh"] = delta
-                
+
                 # Add any additional energy properties
                 for key, value_dict in energy_data.items():
-                    if key not in ["energy", "deltaEnergy"] and isinstance(value_dict, dict):
+                    if key not in ["energy", "deltaEnergy"] and isinstance(
+                        value_dict, dict
+                    ):
                         if "value" in value_dict:
                             attributes[f"energy_{key}"] = value_dict["value"]
-                
+
                 break
-        
+
         return attributes
 
     @property
@@ -204,7 +213,7 @@ class SmartThingsPowerMeter(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "powerMeter" in component_status:
                 power = component_status["powerMeter"].get("power", {}).get("value")
@@ -213,7 +222,7 @@ class SmartThingsPowerMeter(CoordinatorEntity, SensorEntity):
                         return float(power)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
@@ -222,26 +231,28 @@ class SmartThingsPowerMeter(CoordinatorEntity, SensorEntity):
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
         attributes = {}
-        
+
         for component_id, component_status in status.items():
             if "powerMeter" in component_status:
                 power_data = component_status["powerMeter"]
-                
+
                 # Add power consumption tier info if available
                 if "powerConsumptionReport" in power_data:
                     report = power_data["powerConsumptionReport"].get("value", {})
                     if isinstance(report, dict):
                         for key, value in report.items():
                             attributes[f"power_{key}"] = value
-                
+
                 # Add any additional power properties
                 for key, value_dict in power_data.items():
-                    if key not in ["power", "powerConsumptionReport"] and isinstance(value_dict, dict):
+                    if key not in ["power", "powerConsumptionReport"] and isinstance(
+                        value_dict, dict
+                    ):
                         if "value" in value_dict:
                             attributes[f"power_{key}"] = value_dict["value"]
-                
+
                 break
-        
+
         return attributes
 
     @property
@@ -294,16 +305,20 @@ class SmartThingsVoltageSensor(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "voltageMeasurement" in component_status:
-                voltage = component_status["voltageMeasurement"].get("voltage", {}).get("value")
+                voltage = (
+                    component_status["voltageMeasurement"]
+                    .get("voltage", {})
+                    .get("value")
+                )
                 if voltage is not None:
                     try:
                         return float(voltage)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
@@ -356,16 +371,20 @@ class SmartThingsCurrentSensor(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor."""
         device = self.coordinator.devices.get(self._device_id, {})
         status = device.get("status", {})
-        
+
         for component_id, component_status in status.items():
             if "currentMeasurement" in component_status:
-                current = component_status["currentMeasurement"].get("current", {}).get("value")
+                current = (
+                    component_status["currentMeasurement"]
+                    .get("current", {})
+                    .get("value")
+                )
                 if current is not None:
                     try:
                         return float(current)
                     except (ValueError, TypeError):
                         pass
-        
+
         return None
 
     @property
