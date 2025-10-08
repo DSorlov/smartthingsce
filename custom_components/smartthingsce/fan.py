@@ -3,24 +3,24 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
 import math
+from typing import Any, Optional
 
 from homeassistant.components.fan import (
     FanEntity,
     FanEntityFeature,
 )
-from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util.percentage import (
     ordered_list_item_to_percentage,
     percentage_to_ordered_list_item,
 )
 
-from .const import DOMAIN, ATTRIBUTION, DEVICE_VERSION, get_device_capabilities
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from .const import ATTRIBUTION, DEVICE_VERSION, DOMAIN, get_device_capabilities
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -7,17 +7,17 @@ from typing import Any, Optional
 
 from homeassistant.components.cover import (
     ATTR_POSITION,
+    CoverDeviceClass,
     CoverEntity,
     CoverEntityFeature,
-    CoverDeviceClass,
 )
-from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
-
-from .const import DOMAIN, ATTRIBUTION, DEVICE_VERSION, get_device_capabilities
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+
+from .const import ATTRIBUTION, DEVICE_VERSION, DOMAIN, get_device_capabilities
 
 _LOGGER = logging.getLogger(__name__)
 

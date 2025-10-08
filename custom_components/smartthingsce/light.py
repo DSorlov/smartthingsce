@@ -22,7 +22,7 @@ from homeassistant.util.color import (
     color_temperature_mired_to_kelvin,
 )
 
-from .const import ATTRIBUTION, DOMAIN, DEVICE_VERSION, get_device_capabilities
+from .const import ATTRIBUTION, DEVICE_VERSION, DOMAIN, get_device_capabilities
 
 _LOGGER = logging.getLogger(__name__)
 

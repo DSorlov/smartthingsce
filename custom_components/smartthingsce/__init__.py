@@ -1,10 +1,8 @@
 """SmartThings Community Edition Integration."""
 
-import asyncio
-import logging
-import uuid
 from datetime import timedelta
-from typing import Any, Dict, Optional
+import logging
+from typing import Any, Dict
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ACCESS_TOKEN

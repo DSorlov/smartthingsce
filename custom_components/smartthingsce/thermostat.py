@@ -6,12 +6,12 @@ import logging
 from typing import Any, Optional
 
 from homeassistant.components.climate import (
+    FAN_AUTO,
+    FAN_ON,
     ClimateEntity,
     ClimateEntityFeature,
-    HVACMode,
     HVACAction,
-    FAN_ON,
-    FAN_AUTO,
+    HVACMode,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
@@ -20,7 +20,7 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import ATTRIBUTION, DOMAIN, DEVICE_VERSION, get_device_capabilities
+from .const import ATTRIBUTION, DEVICE_VERSION, DOMAIN, get_device_capabilities
 
 _LOGGER = logging.getLogger(__name__)
 

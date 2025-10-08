@@ -1,10 +1,11 @@
 """Config flow for SmartThings Community Edition."""
 
 import logging
-import uuid
 from typing import Any, Dict, Optional
+import uuid
 
 import voluptuous as vol
+
 from homeassistant import config_entries
 from homeassistant.const import CONF_ACCESS_TOKEN
 from homeassistant.core import callback

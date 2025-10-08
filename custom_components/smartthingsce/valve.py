@@ -6,17 +6,17 @@ import logging
 from typing import Any, Optional
 
 from homeassistant.components.valve import (
+    ValveDeviceClass,
     ValveEntity,
     ValveEntityFeature,
-    ValveDeviceClass,
 )
-from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, ATTRIBUTION, DEVICE_VERSION, get_device_capabilities
+from .const import ATTRIBUTION, DEVICE_VERSION, DOMAIN, get_device_capabilities
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -11,10 +11,10 @@ from homeassistant.components.sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     PERCENTAGE,
+    UnitOfElectricPotential,
     UnitOfEnergy,
     UnitOfPower,
     UnitOfTemperature,
-    UnitOfElectricPotential,
     UnitOfTime,
 )
 from homeassistant.core import HomeAssistant
@@ -22,7 +22,7 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import ATTRIBUTION, DOMAIN, DEVICE_VERSION, get_device_capabilities
+from .const import ATTRIBUTION, DEVICE_VERSION, DOMAIN, get_device_capabilities
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -345,7 +345,7 @@ class SmartThingsSensor(CoordinatorEntity, SensorEntity):
                     return float(value)
                 except (ValueError, TypeError):
                     return None
-            # For non-numeric sensors (like refrigeration status), return the string value
+            # For non-numeric sensors (like refrigeration status), return string value
             return str(value)
 
         return None

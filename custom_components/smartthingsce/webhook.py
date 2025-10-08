@@ -1,11 +1,11 @@
 """Webhook manager for SmartThings Community Edition."""
 
-import asyncio
 import logging
-import uuid
 from typing import Any, Dict, Optional
+import uuid
 
 from aiohttp import web
+
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -14,8 +14,16 @@ from .const import CONF_TUNNEL_SUBDOMAIN, CONF_WEBHOOK_ENABLED, WEBHOOK_PATH
 
 _LOGGER = logging.getLogger(__name__)
 
-# Import pyngrok for tunneling (required dependency)
-from pyngrok import ngrok
+# Import pyngrok for tunneling (required dependency at runtime)
+try:
+    from pyngrok import ngrok
+
+    NGROK_AVAILABLE = True
+except ImportError:
+    # Allow import to succeed in test/CI environments
+    ngrok = None
+    NGROK_AVAILABLE = False
+    _LOGGER.warning("pyngrok not available - this is expected in CI/test environments")
 
 
 class SmartThingsWebhookView(HomeAssistantView):
@@ -135,7 +143,7 @@ class WebhookManager:
             await self._delete_subscriptions()
 
             # Stop ngrok tunnel
-            if hasattr(self, "ngrok_tunnel") and self.ngrok_tunnel:
+            if hasattr(self, "ngrok_tunnel") and self.ngrok_tunnel and ngrok:
                 try:
                     ngrok.disconnect(self.ngrok_tunnel.public_url)
                     _LOGGER.info("Ngrok tunnel disconnected")
@@ -150,6 +158,12 @@ class WebhookManager:
 
     async def _start_tunnel(self) -> None:
         """Start ngrok tunnel for webhooks."""
+        if not NGROK_AVAILABLE:
+            raise ImportError(
+                "pyngrok is required for this integration but is not installed. "
+                "Install it with: pip install pyngrok>=7.0.0"
+            )
+
         try:
             subdomain = self.entry.data.get(CONF_TUNNEL_SUBDOMAIN)
             port = 8123  # Home Assistant default port
